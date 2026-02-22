@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSH 综合测试控制台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        .header p { opacity: 0.8; font-size: 14px; }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .auth-bar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .auth-bar .status { 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            font-weight: 600;
+        }
+        .auth-bar .status.loggedin { background: #d4edda; color: #155724; }
+        .auth-bar .status.loggedout { background: #f8d7da; color: #721c24; }
+        .auth-bar input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .auth-bar button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .auth-bar button:hover { background: #5568d6; }
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .tab:hover { border-color: #667eea; }
+        .tab.active { background: #667eea; color: white; border-color: #667eea; }
+        .panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: none;
+        }
+        .panel.active { display: block; }
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .api-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .api-section h4 {
+            font-size: 14px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .api-section .endpoint {
+            font-family: monospace;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn:hover { background: #5568d6; }
+        .btn.secondary { background: #6c757d; }
+        .btn.success { background: #28a745; }
+        .btn.danger { background: #dc3545; }
+        .btn.warning { background: #ffc107; color: #333; }
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: #1e1e1e;
+            border-radius: 8px;
+            color: #d4d4d4;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .result-box .success { color: #4ec9b0; }
+        .result-box .error { color: #f14c4c; }
+        .result-box .info { color: #3794ff; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .card-title { font-weight: 600; font-size: 15px; }
+        .card-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-paid { background: #d4edda; color: #155724; }
+        .badge-closed { background: #f8d7da; color: #721c24; }
+        .badge-unused { background: #cce5ff; color: #004085; }
+        .badge-used { background: #d4edda; color: #155724; }
+        .badge-expired { background: #e2e3e5; color: #383d41; }
+        .card-meta { font-size: 13px; color: #666; line-height: 1.8; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-box .number { font-size: 28px; font-weight: 700; }
+        .stat-box .label { font-size: 12px; opacity: 0.9; margin-top: 5px; }
+        .qr-display {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .qr-code {
+            font-family: monospace;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #333;
+            padding: 20px;
+            background: white;
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .verify-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .verify-input input {
+            flex: 1;
+            padding: 15px;
+            font-size: 18px;
+            font-family: monospace;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .verify-input input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>WSH 综合测试控制台</h1>
+        <p>订单管理 / 券码管理 / 核销系统 / 服务费账单</p>
+    </div>
+
+    <div class="container">
+        <div class="auth-bar">
+            <span>认证状态:</span>
+            <span class="status loggedout" id="authStatus">未登录</span>
+            <input type="text" id="tokenInput" placeholder="输入JWT Token（测试用，或点击模拟登录）">
+            <button onclick="mockLogin()">模拟登录(用户)</button>
+            <button onclick="mockMerchantLogin()" style="background:#28a745">模拟登录(商户)</button>
+            <button onclick="logout()" style="background:#dc3545">退出</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchPanel('activities')">活动浏览</button>
+            <button class="tab" onclick="switchPanel('orders')">订单管理</button>
+            <button class="tab" onclick="switchPanel('vouchers')">我的券包</button>
+            <button class="tab" onclick="switchPanel('verify')">核销中心</button>
+            <button class="tab" onclick="switchPanel('billing')">服务费账单</button>
+            <button class="tab" onclick="switchPanel('api')">API调试</button>
+        </div>
+
+        <!-- 活动浏览面板 -->
+        <div class="panel active" id="panel-activities">
+            <div class="panel-title">同城活动广场</div>
+            <div class="api-section">
+                <div class="btn-group">
+                    <input type="text" id="cityInput" placeholder="城市" value="深圳" style="width:120px">
+                    <button class="btn" onclick="loadPublicActivities()">加载活动</button>
+                    <button class="btn secondary" onclick="loadPublicMerchants()">加载商户</button>
+                </div>
+            </div>
+            <div id="activitiesResult" class="result-box">点击上方按钮加载数据...</div>
+        </div>
+
+        <!-- 订单管理面板 -->
+        <div class="panel" id="panel-orders">
+            <div class="panel-title">订单管理</div>
+            <div class="grid-2">
+                <div class="api-section">
+                    <h4>创建订单</h4>
+                    <div class="form-group">
+                        <label>活动ID</label>
+                        <input type="number" id="orderActivityId" placeholder="输入活动ID" value="600001">
+                    </div>
+                    <div class="form-group">
+                        <label>数量</label>
+                        <input type="number" id="orderQuantity" placeholder="购买数量" value="1">
+                    </div>
+                    <button class="btn success" onclick="createOrder()">创建订单</button>
+                </div>
+                <div class="api-section">
+                    <h4>订单操作</h4>
+                    <div class="form-group">
+                        <label>订单ID</label>
+                        <input type="number" id="operateOrderId" placeholder="输入订单ID">
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn" onclick="getOrderDetail()">查看详情</button>
+                        <button class="btn warning" onclick="requestPayment()">发起支付</button>
+                        <button class="btn danger" onclick="cancelOrder()">取消订单</button>
+                    </div>
+                </div>
+            </div>
+            <div class="api-section">
+                <h4>我的订单列表</h4>
+                <div class="btn-group">
+                    <button class="btn" onclick="loadOrders()">全部订单</button>
+                    <button class="btn secondary" onclick="loadOrders(0)">待支付</button>
+                    <button class="btn success" onclick="loadOrders(1)">已支付</button>
+                    <button class="btn" onclick="loadOrders(2)" style="background:#6c757d">已关闭</button>
+                </div>
+            </div>
+            <div id="ordersResult" class="result-box">登录后查看订单...</div>
+        </div>
+
+        <!-- 我的券包面板 -->
+        <div class="panel" id="panel-vouchers">
+            <div class="panel-title">我的券包</div>
+            <div class="stats-grid" id="voucherStats">
+                <div class="stat-box"><div class="number">-</div><div class="label">总计</div></div>
+                <div class="stat-box"><div class="number">-</div><div class="label">可用</div></div>
+                <div class="stat-box"><div class="number">-</div><div class="label">已使用</div></div>
+                <div class="stat-box"><div class="number">-</div><div class="label">已过期</div></div>
+            </div>
+            <div class="btn-group" style="margin-bottom:15px">
+                <button class="btn" onclick="loadVouchers()">全部券码</button>
+                <button class="btn success" onclick="loadVouchers(0)">可用</button>
+                <button class="btn secondary" onclick="loadVouchers(1)">已使用</button>
+                <button class="btn" onclick="loadVouchers(2)" style="background:#6c757d">已过期</button>
+            </div>
+            <div id="vouchersResult" class="result-box">登录后查看券包...</div>
+        </div>
+
+        <!-- 核销中心面板 -->
+        <div class="panel" id="panel-verify">
+            <div class="panel-title">核销中心 (商户端)</div>
+            <div class="api-section">
+                <h4>扫码核销</h4>
+                <div class="verify-input">
+                    <input type="text" id="verifyCode" placeholder="输入或扫描券码" maxlength="13">
+                    <button class="btn success" onclick="verifyVoucher()" style="padding:15px 30px;font-size:16px">核销</button>
+                </div>
+                <div class="form-group">
+                    <label>门店ID（可选）</label>
+                    <input type="number" id="verifyBranchId" placeholder="输入门店ID" value="300001">
+                </div>
+            </div>
+            <div class="api-section">
+                <h4>核销记录</h4>
+                <div class="btn-group">
+                    <button class="btn" onclick="loadVerificationRecords()">商户全部记录</button>
+                    <button class="btn secondary" onclick="loadMyVerificationRecords()">我的核销记录</button>
+                </div>
+            </div>
+            <div id="verifyResult" class="result-box">使用商户账号登录后操作...</div>
+        </div>
+
+        <!-- 服务费账单面板 -->
+        <div class="panel" id="panel-billing">
+            <div class="panel-title">服务费账单 (商户端)</div>
+            <div class="stats-grid" id="billingStats">
+                <div class="stat-box"><div class="number">-</div><div class="label">总交易额</div></div>
+                <div class="stat-box"><div class="number">-</div><div class="label">总服务费</div></div>
+                <div class="stat-box"><div class="number">-</div><div class="label">本月交易</div></div>
+                <div class="stat-box"><div class="number">-</div><div class="label">本月服务费</div></div>
+            </div>
+            <div class="api-section">
+                <h4>服务费明细</h4>
+                <div class="btn-group">
+                    <button class="btn" onclick="loadServiceFeeSummary()">加载汇总</button>
+                    <button class="btn secondary" onclick="loadServiceFeeBill()">查看账单明细</button>
+                    <select id="billMonth" style="padding:8px 12px;border-radius:6px;border:1px solid #ddd">
+                        <option value="">全部时间</option>
+                        <option value="2026-02">2026年2月</option>
+                        <option value="2026-01">2026年1月</option>
+                    </select>
+                </div>
+            </div>
+            <div id="billingResult" class="result-box">使用商户账号登录后查看...</div>
+        </div>
+
+        <!-- API调试面板 -->
+        <div class="panel" id="panel-api">
+            <div class="panel-title">API调试工具</div>
+            <div class="api-section">
+                <h4>自定义请求</h4>
+                <div class="form-group">
+                    <label>请求方法</label>
+                    <select id="apiMethod">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>API路径</label>
+                    <input type="text" id="apiPath" placeholder="/v1/orders" value="/v1/public/activities?city=深圳">
+                </div>
+                <div class="form-group">
+                    <label>请求体 (JSON，POST/PUT时使用)</label>
+                    <textarea id="apiBody" rows="4" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-family:monospace" placeholder='{"key": "value"}'></textarea>
+                </div>
+                <button class="btn" onclick="sendApiRequest()">发送请求</button>
+            </div>
+            <div id="apiResult" class="result-box">响应结果将显示在这里...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8082';
+        let authToken = null;
+        let userRole = null; // 0=consumer, 1=merchant_admin, 2=merchant_staff
+
+        function updateAuthStatus() {
+            const status = document.getElementById('authStatus');
+            if (authToken) {
+                status.textContent = userRole >= 1 ? '已登录(商户)' : '已登录(用户)';
+                status.className = 'status loggedin';
+            } else {
+                status.textContent = '未登录';
+                status.className = 'status loggedout';
+            }
+        }
+
+        // 模拟用户登录（生成测试Token）
+        function mockLogin() {
+            // 模拟JWT payload: userId=100001, role=0(consumer)
+            authToken = 'mock_user_token_100001';
+            userRole = 0;
+            document.getElementById('tokenInput').value = authToken;
+            updateAuthStatus();
+            log('apiResult', '模拟用户登录成功\nuserId: 100001\nrole: consumer', 'success');
+        }
+
+        // 模拟商户登录
+        function mockMerchantLogin() {
+            // 模拟JWT payload: userId=100001, role=1(merchant_admin), merchantId=200001, employeeId=400001
+            authToken = 'mock_merchant_token_200001';
+            userRole = 1;
+            document.getElementById('tokenInput').value = authToken;
+            updateAuthStatus();
+            log('apiResult', '模拟商户登录成功\nuserId: 100001\nrole: merchant_admin\nmerchantId: 200001\nemployeeId: 400001', 'success');
+        }
+
+        function logout() {
+            authToken = null;
+            userRole = null;
+            document.getElementById('tokenInput').value = '';
+            updateAuthStatus();
+            log('apiResult', '已退出登录', 'info');
+        }
+
+        function switchPanel(panelId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('panel-' + panelId).classList.add('active');
+        }
+
+        function log(elementId, message, type = 'info') {
+            const box = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            box.innerHTML = `<span class="${colorClass}">[${timestamp}] ${type.toUpperCase()}</span>\n${message}`;
+        }
+
+        function formatJson(obj) {
+            return JSON.stringify(obj, null, 2);
+        }
+
+        async function apiCall(method, path, body = null) {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (authToken) {
+                headers['Authorization'] = 'Bearer ' + authToken;
+            }
+
+            const options = { method, headers };
+            if (body && (method === 'POST' || method === 'PUT')) {
+                options.body = JSON.stringify(body);
+            }
+
+            try {
+                const response = await fetch(API_BASE + path, options);
+                return await response.json();
+            } catch (error) {
+                return { code: -1, message: error.message };
+            }
+        }
+
+        // ========== 活动相关 ==========
+        async function loadPublicActivities() {
+            const city = document.getElementById('cityInput').value || '深圳';
+            log('activitiesResult', '加载中...', 'info');
+            const result = await apiCall('GET', `/v1/public/activities?city=${encodeURIComponent(city)}`);
+            if (result.code === 200) {
+                const data = result.data;
+                const summary = `城市: ${data.city}
+活动统计: 代金券=${data.typeCount?.voucher || 0}, 储值=${data.typeCount?.deposit || 0}, 积分=${data.typeCount?.points || 0}, 团购=${data.typeCount?.group || 0}
+总计: ${data.typeCount?.total || 0} 个活动
+
+详细数据:
+${formatJson(data)}`;
+                log('activitiesResult', summary, 'success');
+            } else {
+                log('activitiesResult', '加载失败: ' + result.message, 'error');
+            }
+        }
+
+        async function loadPublicMerchants() {
+            const city = document.getElementById('cityInput').value || '深圳';
+            log('activitiesResult', '加载中...', 'info');
+            const result = await apiCall('GET', `/v1/public/merchants?city=${encodeURIComponent(city)}`);
+            if (result.code === 200) {
+                log('activitiesResult', `找到 ${result.data.length} 个商户\n\n${formatJson(result.data)}`, 'success');
+            } else {
+                log('activitiesResult', '加载失败: ' + result.message, 'error');
+            }
+        }
+
+        // ========== 订单相关 ==========
+        async function createOrder() {
+            if (!authToken) { log('ordersResult', '请先登录', 'error'); return; }
+            const activityId = document.getElementById('orderActivityId').value;
+            const quantity = document.getElementById('orderQuantity').value;
+            
+            log('ordersResult', '创建订单中...', 'info');
+            const result = await apiCall('POST', '/v1/orders', { activityId: parseInt(activityId), quantity: parseInt(quantity) });
+            if (result.code === 200) {
+                document.getElementById('operateOrderId').value = result.data.orderId;
+                log('ordersResult', `订单创建成功!\n订单号: ${result.data.orderNo}\n\n${formatJson(result.data)}`, 'success');
+            } else {
+                log('ordersResult', '创建失败: ' + result.message, 'error');
+            }
+        }
+
+        async function loadOrders(status) {
+            if (!authToken) { log('ordersResult', '请先登录', 'error'); return; }
+            let url = '/v1/orders?page=1&pageSize=20';
+            if (status !== undefined) url += `&status=${status}`;
+            
+            log('ordersResult', '加载中...', 'info');
+            const result = await apiCall('GET', url);
+            if (result.code === 200) {
+                log('ordersResult', `找到 ${result.data.total} 个订单\n\n${formatJson(result.data)}`, 'success');
+            } else {
+                log('ordersResult', '加载失败: ' + result.message, 'error');
+            }
+        }
+
+        async function getOrderDetail() {
+            if (!authToken) { log('ordersResult', '请先登录', 'error'); return; }
+            const orderId = document.getElementById('operateOrderId').value;
+            if (!orderId) { log('ordersResult', '请输入订单ID', 'error'); return; }
+            
+            const result = await apiCall('GET', `/v1/orders/${orderId}`);
+            if (result.code === 200) {
+                log('ordersResult', formatJson(result.data), 'success');
+            } else {
+                log('ordersResult', '查询失败: ' + result.message, 'error');
+            }
+        }
+
+        async function requestPayment() {
+            if (!authToken) { log('ordersResult', '请先登录', 'error'); return; }
+            const orderId = document.getElementById('operateOrderId').value;
+            if (!orderId) { log('ordersResult', '请输入订单ID', 'error'); return; }
+            
+            const result = await apiCall('POST', `/v1/orders/${orderId}/pay`);
+            if (result.code === 200) {
+                log('ordersResult', `支付参数获取成功!\n\n${formatJson(result.data)}`, 'success');
+            } else {
+                log('ordersResult', '支付失败: ' + result.message, 'error');
+            }
+        }
+
+        async function cancelOrder() {
+            if (!authToken) { log('ordersResult', '请先登录', 'error'); return; }
+            const orderId = document.getElementById('operateOrderId').value;
+            if (!orderId) { log('ordersResult', '请输入订单ID', 'error'); return; }
+            
+            const result = await apiCall('POST', `/v1/orders/${orderId}/cancel`);
+            if (result.code === 200) {
+                log('ordersResult', '订单已取消', 'success');
+            } else {
+                log('ordersResult', '取消失败: ' + result.message, 'error');
+            }
+        }
+
+        // ========== 券包相关 ==========
+        async function loadVouchers(status) {
+            if (!authToken) { log('vouchersResult', '请先登录', 'error'); return; }
+            let url = '/v1/vouchers';
+            if (status !== undefined) url += `?status=${status}`;
+            
+            log('vouchersResult', '加载中...', 'info');
+            const result = await apiCall('GET', url);
+            if (result.code === 200) {
+                const data = result.data;
+                // 更新统计
+                const stats = document.getElementById('voucherStats');
+                stats.children[0].querySelector('.number').textContent = data.total || 0;
+                stats.children[1].querySelector('.number').textContent = data.availableCount || 0;
+                stats.children[2].querySelector('.number').textContent = data.usedCount || 0;
+                stats.children[3].querySelector('.number').textContent = data.expiredCount || 0;
+                
+                log('vouchersResult', formatJson(data), 'success');
+            } else {
+                log('vouchersResult', '加载失败: ' + result.message, 'error');
+            }
+        }
+
+        // ========== 核销相关 ==========
+        async function verifyVoucher() {
+            if (!authToken || userRole < 1) { 
+                log('verifyResult', '请使用商户账号登录', 'error'); 
+                return; 
+            }
+            const voucherCode = document.getElementById('verifyCode').value.trim().toUpperCase();
+            const branchId = document.getElementById('verifyBranchId').value;
+            
+            if (!voucherCode) { log('verifyResult', '请输入券码', 'error'); return; }
+            
+            log('verifyResult', '核销中...', 'info');
+            const result = await apiCall('POST', '/v1/verification/verify', { 
+                voucherCode, 
+                branchId: branchId ? parseInt(branchId) : null 
+            });
+            
+            if (result.code === 200) {
+                log('verifyResult', `核销成功!\n\n用户: ${result.data.userNickname || '未知'}\n券码类型: ${result.data.voucherTypeName}\n券码价值: ${result.data.voucherValue}元\n服务费: ${result.data.serviceFee}元\n商户到账: ${result.data.merchantAmount}元\n\n${formatJson(result.data)}`, 'success');
+            } else {
+                log('verifyResult', '核销失败: ' + result.message, 'error');
+            }
+        }
+
+        async function loadVerificationRecords() {
+            if (!authToken || userRole < 1) { 
+                log('verifyResult', '请使用商户账号登录', 'error'); 
+                return; 
+            }
+            
+            log('verifyResult', '加载中...', 'info');
+            const result = await apiCall('GET', '/v1/verification/records?page=1&pageSize=20');
+            if (result.code === 200) {
+                const data = result.data;
+                log('verifyResult', `今日核销: ${data.todayCount || 0} 笔, 金额: ${data.todayAmount || 0}元\n总记录: ${data.total || 0} 条\n\n${formatJson(data)}`, 'success');
+            } else {
+                log('verifyResult', '加载失败: ' + result.message, 'error');
+            }
+        }
+
+        async function loadMyVerificationRecords() {
+            if (!authToken || userRole < 1) { 
+                log('verifyResult', '请使用商户账号登录', 'error'); 
+                return; 
+            }
+            
+            const result = await apiCall('GET', '/v1/verification/my-records?page=1&pageSize=20');
+            if (result.code === 200) {
+                log('verifyResult', formatJson(result.data), 'success');
+            } else {
+                log('verifyResult', '加载失败: ' + result.message, 'error');
+            }
+        }
+
+        // ========== 服务费账单相关 ==========
+        async function loadServiceFeeSummary() {
+            if (!authToken || userRole < 1) { 
+                log('billingResult', '请使用商户账号登录', 'error'); 
+                return; 
+            }
+            
+            log('billingResult', '加载中...', 'info');
+            const result = await apiCall('GET', '/v1/merchant/billing/service-fees/summary');
+            if (result.code === 200) {
+                const data = result.data;
+                // 更新统计
+                const stats = document.getElementById('billingStats');
+                stats.children[0].querySelector('.number').textContent = (data.totalOrderAmount || 0) + '元';
+                stats.children[1].querySelector('.number').textContent = (data.totalServiceFee || 0) + '元';
+                stats.children[2].querySelector('.number').textContent = (data.monthOrderAmount || 0) + '元';
+                stats.children[3].querySelector('.number').textContent = (data.monthServiceFee || 0) + '元';
+                
+                log('billingResult', `服务费率: ${data.serviceFeeRatePercent}\n总核销笔数: ${data.totalCount}\n本月核销笔数: ${data.monthCount}\n\n${formatJson(data)}`, 'success');
+            } else {
+                log('billingResult', '加载失败: ' + result.message, 'error');
+            }
+        }
+
+        async function loadServiceFeeBill() {
+            if (!authToken || userRole < 1) { 
+                log('billingResult', '请使用商户账号登录', 'error'); 
+                return; 
+            }
+            
+            let url = '/v1/merchant/billing/service-fees?page=1&pageSize=20';
+            const monthValue = document.getElementById('billMonth').value;
+            if (monthValue) {
+                const [year, month] = monthValue.split('-');
+                url += `&year=${year}&month=${month}`;
+            }
+            
+            const result = await apiCall('GET', url);
+            if (result.code === 200) {
+                log('billingResult', `共 ${result.data.total} 条记录\n\n${formatJson(result.data)}`, 'success');
+            } else {
+                log('billingResult', '加载失败: ' + result.message, 'error');
+            }
+        }
+
+        // ========== API调试 ==========
+        async function sendApiRequest() {
+            const method = document.getElementById('apiMethod').value;
+            const path = document.getElementById('apiPath').value;
+            const bodyText = document.getElementById('apiBody').value;
+            
+            let body = null;
+            if (bodyText && (method === 'POST' || method === 'PUT')) {
+                try {
+                    body = JSON.parse(bodyText);
+                } catch (e) {
+                    log('apiResult', '请求体JSON格式错误: ' + e.message, 'error');
+                    return;
+                }
+            }
+            
+            log('apiResult', `发送请求: ${method} ${path}...`, 'info');
+            const result = await apiCall(method, path, body);
+            log('apiResult', formatJson(result), result.code === 200 ? 'success' : 'error');
+        }
+
+        // 初始化
+        updateAuthStatus();
+    </script>
+</body>
+</html>

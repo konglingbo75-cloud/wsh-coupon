@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.redisson.spring.starter.RedissonAutoConfigurationV2
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:wsh_dev;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;INIT=SET NAMES 'UTF-8'
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  sql:
+    init:
+      mode: never  # 使用DataInitializer手动初始化，避免冲突
+  flyway:
+    enabled: false
+
+wsh:
+  redis:
+    mock: true
+  security:
+    mock-auth: true  # 启用mock token支持，仅用于本地测试
+  wechat:
+    app-id: wx_local_test
+    app-secret: secret_local_test
+    mch-id: mch_local_test
+    api-v3-key: v3key_local_test
+    private-key-path: classpath:cert/apiclient_key.pem
+    serial-number: serial_local_test
+    notify-url: http://localhost:8080/v1/callback
+  cos:
+    secret-id: cos_local_test
+    secret-key: cos_local_test
+    region: ap-guangzhou
+    bucket: wsh-local-test
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.wsh: DEBUG

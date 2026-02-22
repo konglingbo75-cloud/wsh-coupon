@@ -1,0 +1,171 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "微生活券吧"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/tabbar/home/index",
+      "style": {
+        "navigationBarTitleText": "权益资产"
+      }
+    },
+    {
+      "path": "pages/tabbar/activity/index",
+      "style": {
+        "navigationBarTitleText": "活动广场"
+      }
+    },
+    {
+      "path": "pages/tabbar/mine/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    }
+  ],
+  "subPackages": [
+    {
+      "root": "pages/consumer",
+      "pages": [
+        {
+          "path": "equity/summary",
+          "style": { "navigationBarTitleText": "权益总览" }
+        },
+        {
+          "path": "equity/expiring",
+          "style": { "navigationBarTitleText": "即将过期" }
+        },
+        {
+          "path": "member/list",
+          "style": { "navigationBarTitleText": "我的会员" }
+        },
+        {
+          "path": "member/detail",
+          "style": { "navigationBarTitleText": "会员详情" }
+        },
+        {
+          "path": "activity/detail",
+          "style": { "navigationBarTitleText": "活动详情" }
+        },
+        {
+          "path": "activity/nearby",
+          "style": { "navigationBarTitleText": "附近优惠" }
+        },
+        {
+          "path": "order/confirm",
+          "style": { "navigationBarTitleText": "确认订单" }
+        },
+        {
+          "path": "order/list",
+          "style": { "navigationBarTitleText": "我的订单" }
+        },
+        {
+          "path": "order/detail",
+          "style": { "navigationBarTitleText": "订单详情" }
+        },
+        {
+          "path": "voucher/list",
+          "style": { "navigationBarTitleText": "我的券包" }
+        },
+        {
+          "path": "voucher/detail",
+          "style": { "navigationBarTitleText": "券码详情" }
+        },
+        {
+          "path": "message/list",
+          "style": { "navigationBarTitleText": "消息中心" }
+        }
+      ]
+    },
+    {
+      "root": "pages/merchant",
+      "pages": [
+        {
+          "path": "verification/scan",
+          "style": { "navigationBarTitleText": "扫码核销" }
+        },
+        {
+          "path": "verification/record",
+          "style": { "navigationBarTitleText": "核销记录" }
+        },
+        {
+          "path": "employee/bind",
+          "style": { "navigationBarTitleText": "员工绑定" }
+        }
+      ]
+    },
+    {
+      "root": "pages/admin",
+      "pages": [
+        {
+          "path": "dashboard",
+          "style": { "navigationBarTitleText": "商户中心" }
+        },
+        {
+          "path": "activity/list",
+          "style": { "navigationBarTitleText": "活动管理" }
+        },
+        {
+          "path": "member/stats",
+          "style": { "navigationBarTitleText": "会员统计" }
+        },
+        {
+          "path": "billing/onboarding",
+          "style": { "navigationBarTitleText": "入驻费管理" }
+        },
+        {
+          "path": "billing/service-fee",
+          "style": { "navigationBarTitleText": "服务费账单" }
+        },
+        {
+          "path": "order/list",
+          "style": { "navigationBarTitleText": "订单管理" }
+        },
+        {
+          "path": "settings",
+          "style": { "navigationBarTitleText": "设置" }
+        }
+      ]
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "微生活券吧",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#667eea",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/tabbar/home/index",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/tabbar/activity/index",
+        "iconPath": "static/tabbar/activity.png",
+        "selectedIconPath": "static/tabbar/activity-active.png",
+        "text": "活动"
+      },
+      {
+        "pagePath": "pages/tabbar/mine/index",
+        "iconPath": "static/tabbar/mine.png",
+        "selectedIconPath": "static/tabbar/mine-active.png",
+        "text": "我的"
+      }
+    ]
+  }
+}

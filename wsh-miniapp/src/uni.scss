@@ -1,0 +1,51 @@
+/* uni.scss - 全局样式变量 */
+
+/* 主题色 */
+$primary-color: #667eea;
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+/* 文字颜色 */
+$text-primary: #333333;
+$text-secondary: #666666;
+$text-hint: #999999;
+
+/* 背景色 */
+$bg-page: #f5f7fa;
+$bg-card: #ffffff;
+$bg-disabled: #f0f0f0;
+
+/* 边框颜色 */
+$border-color: #e0e0e0;
+$border-light: #f0f0f0;
+
+/* 状态颜色 */
+$success-color: #28a745;
+$warning-color: #ffc107;
+$danger-color: #dc3545;
+$info-color: #17a2b8;
+
+/* 间距 */
+$spacing-xs: 8rpx;
+$spacing-sm: 16rpx;
+$spacing-md: 24rpx;
+$spacing-lg: 32rpx;
+$spacing-xl: 48rpx;
+
+/* 圆角 */
+$radius-sm: 8rpx;
+$radius-md: 16rpx;
+$radius-lg: 24rpx;
+$radius-full: 9999rpx;
+
+/* 字体大小 */
+$font-xs: 22rpx;
+$font-sm: 24rpx;
+$font-md: 28rpx;
+$font-lg: 32rpx;
+$font-xl: 36rpx;
+$font-xxl: 44rpx;
+
+/* 阴影 */
+$shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+$shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);

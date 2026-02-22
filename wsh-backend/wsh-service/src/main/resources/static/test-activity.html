@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动中心测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .search-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .search-bar input, .search-bar select {
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .search-bar input:focus, .search-bar select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .search-bar button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .search-bar button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+        .tab:hover:not(.active) {
+            background: rgba(255,255,255,0.3);
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .stat-card .label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .content {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .activity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .activity-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .activity-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .activity-header {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .activity-type {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .activity-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .activity-body {
+            padding: 15px;
+        }
+        .activity-merchant {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+        .activity-desc {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        .activity-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .activity-stock {
+            font-size: 12px;
+            color: #999;
+        }
+        .activity-stock.low {
+            color: #ff6b6b;
+        }
+        .activity-time {
+            font-size: 12px;
+            color: #999;
+        }
+        .merchant-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .merchant-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        .merchant-card:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        .merchant-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .merchant-info {
+            flex: 1;
+        }
+        .merchant-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        .merchant-address {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .merchant-badge {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #667eea;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .exclusive-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+        .type-section {
+            margin-bottom: 30px;
+        }
+        .type-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .type-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        .type-icon.voucher { background: #ff6b6b; }
+        .type-icon.deposit { background: #4ecdc4; }
+        .type-icon.points { background: #ffe66d; color: #333; }
+        .type-icon.group { background: #a8e6cf; color: #333; }
+        .type-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        .type-count {
+            font-size: 13px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WSH 活动中心</h1>
+        
+        <div class="search-bar">
+            <input type="text" id="cityInput" placeholder="输入城市名称" value="深圳">
+            <select id="activityTypeSelect">
+                <option value="">全部类型</option>
+                <option value="1">代金券</option>
+                <option value="2">储值活动</option>
+                <option value="3">积分兑换</option>
+                <option value="4">团购</option>
+            </select>
+            <button onclick="loadData()">搜索</button>
+            <button onclick="loadNearby()" style="background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);">附近活动</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('activities')">活动广场</button>
+            <button class="tab" onclick="switchTab('merchants')">商户列表</button>
+        </div>
+
+        <div class="stats" id="statsContainer">
+            <div class="stat-card">
+                <div class="number" id="totalActivities">-</div>
+                <div class="label">活动总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="voucherCount">-</div>
+                <div class="label">代金券</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="depositCount">-</div>
+                <div class="label">储值活动</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="pointsCount">-</div>
+                <div class="label">积分兑换</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="groupCount">-</div>
+                <div class="label">团购</div>
+            </div>
+        </div>
+
+        <div class="content" id="activitiesContent">
+            <div class="loading">加载中...</div>
+        </div>
+
+        <div class="content" id="merchantsContent" style="display: none;">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8082';
+        let currentTab = 'activities';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('activitiesContent').style.display = tab === 'activities' ? 'block' : 'none';
+            document.getElementById('merchantsContent').style.display = tab === 'merchants' ? 'block' : 'none';
+            document.getElementById('statsContainer').style.display = tab === 'activities' ? 'grid' : 'none';
+            
+            loadData();
+        }
+
+        async function loadData() {
+            const city = document.getElementById('cityInput').value || '深圳';
+            const activityType = document.getElementById('activityTypeSelect').value;
+            
+            if (currentTab === 'activities') {
+                await loadActivities(city, activityType);
+            } else {
+                await loadMerchants(city);
+            }
+        }
+
+        async function loadActivities(city, activityType) {
+            const container = document.getElementById('activitiesContent');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                let url = `${API_BASE}/v1/public/activities?city=${encodeURIComponent(city)}`;
+                if (activityType) {
+                    url = `${API_BASE}/v1/public/activities/type?city=${encodeURIComponent(city)}&activityType=${activityType}`;
+                }
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    if (activityType) {
+                        // 按类型查询返回数组
+                        renderActivityList(result.data, container);
+                        updateStats({ total: result.data.length });
+                    } else {
+                        // 全部活动返回分组对象
+                        renderActivitiesByType(result.data, container);
+                        updateStats(result.data.typeCount);
+                    }
+                } else {
+                    container.innerHTML = `<div class="empty"><div class="empty-icon">:(</div>加载失败: ${result.message}</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="empty"><div class="empty-icon">:(</div>请求失败: ${error.message}</div>`;
+            }
+        }
+
+        async function loadMerchants(city) {
+            const container = document.getElementById('merchantsContent');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/v1/public/merchants?city=${encodeURIComponent(city)}`);
+                const result = await response.json();
+                
+                if (result.code === 200 && result.data.length > 0) {
+                    renderMerchants(result.data, container);
+                } else {
+                    container.innerHTML = '<div class="empty"><div class="empty-icon">🏪</div>暂无商户数据</div>';
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="empty"><div class="empty-icon">:(</div>请求失败: ${error.message}</div>`;
+            }
+        }
+
+        async function loadNearby() {
+            const container = document.getElementById('activitiesContent');
+            container.innerHTML = '<div class="loading">获取位置中...</div>';
+            
+            // 使用深圳南山区的模拟坐标
+            const longitude = 113.943;
+            const latitude = 22.532;
+            
+            try {
+                // 注意：附近活动需要登录，这里用公开活动模拟
+                const city = document.getElementById('cityInput').value || '深圳';
+                const response = await fetch(`${API_BASE}/v1/public/activities?city=${encodeURIComponent(city)}`);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    renderActivitiesByType(result.data, container, true);
+                    updateStats(result.data.typeCount);
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="empty"><div class="empty-icon">📍</div>获取附近活动失败</div>`;
+            }
+        }
+
+        function updateStats(typeCount) {
+            document.getElementById('totalActivities').textContent = typeCount.total || 0;
+            document.getElementById('voucherCount').textContent = typeCount.voucher || 0;
+            document.getElementById('depositCount').textContent = typeCount.deposit || 0;
+            document.getElementById('pointsCount').textContent = typeCount.points || 0;
+            document.getElementById('groupCount').textContent = typeCount.group || 0;
+        }
+
+        function renderActivitiesByType(data, container, isNearby = false) {
+            const types = [
+                { key: 'voucherActivities', name: '代金券', icon: '🎫', iconClass: 'voucher' },
+                { key: 'depositActivities', name: '储值活动', icon: '💰', iconClass: 'deposit' },
+                { key: 'pointsActivities', name: '积分兑换', icon: '⭐', iconClass: 'points' },
+                { key: 'groupActivities', name: '团购', icon: '👥', iconClass: 'group' }
+            ];
+
+            let html = isNearby ? '<div class="section-title">📍 附近活动</div>' : '';
+            let hasAnyActivity = false;
+
+            types.forEach(type => {
+                const activities = data[type.key] || [];
+                if (activities.length > 0) {
+                    hasAnyActivity = true;
+                    html += `
+                        <div class="type-section">
+                            <div class="type-header">
+                                <div class="type-icon ${type.iconClass}">${type.icon}</div>
+                                <div>
+                                    <div class="type-name">${type.name}</div>
+                                    <div class="type-count">${activities.length} 个活动</div>
+                                </div>
+                            </div>
+                            <div class="activity-grid">
+                                ${activities.map(a => renderActivityCard(a)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (!hasAnyActivity) {
+                html = '<div class="empty"><div class="empty-icon">🎉</div>暂无活动数据</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderActivityList(activities, container) {
+            if (!activities || activities.length === 0) {
+                container.innerHTML = '<div class="empty"><div class="empty-icon">🎉</div>暂无活动数据</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="section-title">活动列表 (${activities.length})</div>
+                <div class="activity-grid">
+                    ${activities.map(a => renderActivityCard(a)).join('')}
+                </div>
+            `;
+        }
+
+        function renderActivityCard(activity) {
+            const stockText = activity.stock === -1 ? '不限量' : 
+                             activity.stock <= 10 ? `仅剩 ${activity.stock} 份` : `库存 ${activity.stock}`;
+            const stockClass = activity.stock > 0 && activity.stock <= 10 ? 'low' : '';
+            
+            const endDate = new Date(activity.endTime);
+            const now = new Date();
+            const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+            const timeText = daysLeft <= 7 ? `剩余 ${daysLeft} 天` : formatDate(activity.endTime);
+
+            return `
+                <div class="activity-card" onclick="showActivityDetail(${activity.activityId})">
+                    <div class="activity-header">
+                        <div class="activity-type">${activity.activityTypeName}</div>
+                        <div class="activity-name">
+                            ${activity.activityName}
+                            ${activity.isExclusive ? '<span class="exclusive-badge">专属</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="activity-body">
+                        <div class="activity-merchant">
+                            <span>🏪</span>
+                            <span>${activity.merchantName}</span>
+                        </div>
+                        <div class="activity-desc">${activity.activityDesc || '暂无描述'}</div>
+                        <div class="activity-meta">
+                            <span class="activity-stock ${stockClass}">${stockText}</span>
+                            <span class="activity-time">⏰ ${timeText}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMerchants(merchants, container) {
+            container.innerHTML = `
+                <div class="section-title">商户列表 (${merchants.length})</div>
+                <div class="merchant-list">
+                    ${merchants.map(m => `
+                        <div class="merchant-card">
+                            <div class="merchant-avatar">${m.merchantName.charAt(0)}</div>
+                            <div class="merchant-info">
+                                <div class="merchant-name">${m.merchantName}</div>
+                                <div class="merchant-address">📍 ${m.address || '暂无地址'}</div>
+                            </div>
+                            <div class="merchant-badge">${m.activityCount} 个活动</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function showActivityDetail(activityId) {
+            window.open(`${API_BASE}/v1/public/activities/${activityId}`, '_blank');
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+
+        // 初始加载
+        loadData();
+    </script>
+</body>
+</html>

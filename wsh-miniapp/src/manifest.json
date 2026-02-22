@@ -1,0 +1,41 @@
+{
+  "name": "微生活券吧",
+  "appid": "__UNI__WSH2026",
+  "description": "会员权益聚合平台 - 用好已有的资产权益",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wxxxxxxxxxxx",
+    "setting": {
+      "urlCheck": false,
+      "minified": true,
+      "es6": true,
+      "postcss": true
+    },
+    "usingComponents": true,
+    "permission": {
+      "scope.userLocation": {
+        "desc": "获取您的位置信息，用于推荐附近商户优惠"
+      }
+    },
+    "requiredPrivateInfos": ["getLocation", "chooseLocation"]
+  },
+  "h5": {
+    "router": {
+      "mode": "hash"
+    },
+    "devServer": {
+      "port": 3000,
+      "proxy": {
+        "/api": {
+          "target": "http://localhost:8080",
+          "changeOrigin": true,
+          "pathRewrite": {
+            "^/api": ""
+          }
+        }
+      }
+    }
+  }
+}

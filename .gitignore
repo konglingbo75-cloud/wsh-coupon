@@ -1,0 +1,36 @@
+# 环境变量（包含敏感信息）
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 依赖目录
+node_modules/
+**/node_modules/
+
+# 构建产物
+dist/
+build/
+target/
+*.jar
+*.war
+
+# 日志
+logs/
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.swp
+
+# Windows 保留文件名
+nul
+NUL
