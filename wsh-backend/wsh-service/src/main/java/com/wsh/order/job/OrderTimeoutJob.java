@@ -1,7 +1,7 @@
 package com.wsh.order.job;
 
 import com.wsh.common.core.constant.Constants;
-import com.wsh.config.MockRedisUtil;
+import com.wsh.common.redis.util.RedisUtil;
 import com.wsh.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class OrderTimeoutJob {
 
     private final OrderService orderService;
-    private final MockRedisUtil redisUtil;
+    private final RedisUtil redisUtil;
 
     private static final String LOCK_KEY = "lock:order:timeout";
     private static final int LOCK_EXPIRE_SECONDS = 300;
@@ -31,7 +31,7 @@ public class OrderTimeoutJob {
     @Scheduled(cron = "0 */5 * * * ?")
     public void closeExpiredOrders() {
         // 获取分布式锁
-        boolean locked = redisUtil.setIfAbsent(LOCK_KEY, "1", LOCK_EXPIRE_SECONDS, TimeUnit.SECONDS);
+        boolean locked = Boolean.TRUE.equals(redisUtil.tryLock(LOCK_KEY, "1", LOCK_EXPIRE_SECONDS, TimeUnit.SECONDS));
         if (!locked) {
             log.debug("订单超时任务正在执行中，跳过本次");
             return;

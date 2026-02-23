@@ -2,7 +2,7 @@ package com.wsh.activity.job;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wsh.common.core.constant.Constants;
-import com.wsh.config.MockRedisUtil;
+import com.wsh.common.redis.util.RedisUtil;
 import com.wsh.domain.entity.Merchant;
 import com.wsh.domain.mapper.MerchantMapper;
 import com.wsh.matching.service.ActivityMatchingService;
@@ -28,7 +28,7 @@ public class ActivitySyncJob {
 
     private final ActivityMatchingService activityMatchingService;
     private final MerchantMapper merchantMapper;
-    private final MockRedisUtil redisUtil;
+    private final RedisUtil redisUtil;
 
     private static final String LOCK_KEY = "lock:activity:sync";
     private static final int LOCK_EXPIRE_SECONDS = 30 * 60; // 30分钟

@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wsh.common.core.constant.Constants;
 import com.wsh.common.core.exception.BusinessException;
 import com.wsh.common.core.util.IdGenerator;
-import com.wsh.config.MockRedisUtil;
+import com.wsh.common.redis.util.RedisUtil;
 import com.wsh.domain.entity.*;
 import com.wsh.domain.mapper.*;
 import com.wsh.integration.wechat.WechatPayService;
@@ -35,7 +35,7 @@ public class OrderService {
     private final ProfitSharingMapper profitSharingMapper;
     private final MerchantMemberSnapshotMapper snapshotMapper;
     private final WechatPayService wechatPayService;
-    private final MockRedisUtil redisUtil;
+    private final RedisUtil redisUtil;
 
     private static final String STOCK_KEY_PREFIX = "activity:stock:";
 

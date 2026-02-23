@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wsh.activity.dto.ActivityDetailResponse;
 import com.wsh.activity.dto.PublicActivityResponse;
 import com.wsh.common.core.constant.Constants;
-import com.wsh.config.MockRedisUtil;
+import com.wsh.common.redis.util.RedisUtil;
 import com.wsh.domain.entity.Activity;
 import com.wsh.domain.entity.Merchant;
 import com.wsh.domain.mapper.ActivityMapper;
@@ -28,7 +28,7 @@ public class PublicActivityService {
 
     private final ActivityMapper activityMapper;
     private final MerchantMapper merchantMapper;
-    private final MockRedisUtil redisUtil;
+    private final RedisUtil redisUtil;
 
     private static final int CACHE_EXPIRE_MINUTES = 5;
 

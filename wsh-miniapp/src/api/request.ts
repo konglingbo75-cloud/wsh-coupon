@@ -7,7 +7,7 @@
 const BASE_URL = '/api'
 // #endif
 // #ifndef H5
-const BASE_URL = 'http://localhost:8080'
+const BASE_URL = 'http://43.134.236.67:9000'
 // #endif
 
 // 请求超时时间
