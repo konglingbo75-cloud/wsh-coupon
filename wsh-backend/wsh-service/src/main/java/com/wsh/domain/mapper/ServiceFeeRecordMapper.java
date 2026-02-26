@@ -54,4 +54,12 @@ public interface ServiceFeeRecordMapper extends BaseMapper<ServiceFeeRecord> {
      */
     @Select("SELECT COALESCE(SUM(merchant_amount), 0) FROM tb_service_fee_record WHERE merchant_id = #{merchantId}")
     BigDecimal sumMerchantAmountByMerchantId(@Param("merchantId") Long merchantId);
+
+    /**
+     * 按活动统计收入（通过 voucher 关联 activity）
+     */
+    @Select("SELECT COALESCE(SUM(sfr.order_amount), 0) FROM tb_service_fee_record sfr " +
+            "INNER JOIN tb_voucher v ON sfr.voucher_id = v.voucher_id " +
+            "WHERE v.activity_id = #{activityId}")
+    BigDecimal sumRevenueByActivityId(@Param("activityId") Long activityId);
 }

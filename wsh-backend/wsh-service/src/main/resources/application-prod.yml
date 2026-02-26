@@ -4,18 +4,18 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://mysql:3306/wsh_prod?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://mysql:3306/wsh_prod?useUnicode=true&characterEncoding=utf8mb4&useSSL=true&requireSSL=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
     username: wsh_app
-    password: ${MYSQL_PASSWORD:wsh@2026!App}
+    password: ${MYSQL_PASSWORD}
   data:
     redis:
       host: redis
       port: 6379
-      password: ${REDIS_PASSWORD:wsh@2026!Redis}
+      password: ${REDIS_PASSWORD}
       database: 0
   flyway:
     clean-on-validation-error: false
-    repair: true
+    repair: false
 
 # 生产环境：关闭 SQL 日志
 mybatis-plus:
@@ -37,7 +37,11 @@ springdoc:
 # 微信配置（从环境变量注入）
 wsh:
   jwt:
-    secret: ${WSH_JWT_SECRET:wsh-coupon-bar-jwt-secret-key-please-change-in-production-2024}
+    secret: ${WSH_JWT_SECRET}
+  security:
+    mock-auth: false
+  redis:
+    mock: false
   wechat:
     app-id: ${WSH_WECHAT_APPID:wxd34a73fd1f1a4f6b}
     app-secret: ${WSH_WECHAT_SECRET:your-wechat-secret}

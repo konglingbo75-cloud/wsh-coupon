@@ -177,6 +177,7 @@ CREATE TABLE IF NOT EXISTS tb_order (
     pay_time        TIMESTAMP,
     transaction_id  VARCHAR(64),
     is_dormancy_awake TINYINT DEFAULT 0,
+    group_order_id  BIGINT,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -349,3 +350,283 @@ CREATE TABLE IF NOT EXISTS tb_admin_operation_log (
 );
 CREATE INDEX IF NOT EXISTS idx_oplog_admin ON tb_admin_operation_log(admin_id);
 CREATE INDEX IF NOT EXISTS idx_oplog_time ON tb_admin_operation_log(created_at);
+
+-- ============================================================
+-- 费用与计费相关表 (V4 迁移补充)
+-- ============================================================
+
+-- 服务套餐配置
+CREATE TABLE IF NOT EXISTS tb_service_package (
+    package_id       BIGINT PRIMARY KEY,
+    package_name     VARCHAR(64) NOT NULL,
+    package_type     TINYINT,
+    price            DECIMAL(10,2) NOT NULL,
+    duration_months  INT DEFAULT 12,
+    service_fee_rate DECIMAL(5,4),
+    features         CLOB,
+    status           TINYINT DEFAULT 1,
+    sort_order       INT DEFAULT 0,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 商户套餐购买记录
+CREATE TABLE IF NOT EXISTS tb_merchant_package_purchase (
+    purchase_id      BIGINT PRIMARY KEY,
+    merchant_id      BIGINT NOT NULL,
+    package_id       BIGINT NOT NULL,
+    price_paid       DECIMAL(10,2) NOT NULL,
+    pay_status       TINYINT DEFAULT 0,
+    pay_time         TIMESTAMP,
+    transaction_id   VARCHAR(64),
+    valid_start_date DATE,
+    valid_end_date   DATE,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_purchase_merchant ON tb_merchant_package_purchase(merchant_id);
+
+-- 商户保证金记录
+CREATE TABLE IF NOT EXISTS tb_merchant_deposit (
+    deposit_id       BIGINT PRIMARY KEY,
+    merchant_id      BIGINT NOT NULL,
+    deposit_amount   DECIMAL(10,2) NOT NULL,
+    pay_status       TINYINT DEFAULT 0,
+    pay_time         TIMESTAMP,
+    transaction_id   VARCHAR(64),
+    refund_time      TIMESTAMP,
+    refund_reason    VARCHAR(255),
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_deposit_merchant ON tb_merchant_deposit(merchant_id);
+
+-- 月度服务费汇总
+CREATE TABLE IF NOT EXISTS tb_monthly_service_fee (
+    summary_id       BIGINT PRIMARY KEY,
+    merchant_id      BIGINT NOT NULL,
+    year_month       VARCHAR(7) NOT NULL,
+    order_count      INT DEFAULT 0,
+    total_amount     DECIMAL(10,2) DEFAULT 0,
+    service_fee      DECIMAL(10,2) DEFAULT 0,
+    deduct_status    TINYINT DEFAULT 0,
+    deduct_time      TIMESTAMP,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_monthly_fee_merchant ON tb_monthly_service_fee(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_monthly_fee_month ON tb_monthly_service_fee(year_month);
+
+-- 商户余额账户
+CREATE TABLE IF NOT EXISTS tb_merchant_balance (
+    balance_id       BIGINT PRIMARY KEY,
+    merchant_id      BIGINT NOT NULL UNIQUE,
+    balance          DECIMAL(12,2) DEFAULT 0,
+    total_recharge   DECIMAL(12,2) DEFAULT 0,
+    total_consume    DECIMAL(12,2) DEFAULT 0,
+    frozen_amount    DECIMAL(12,2) DEFAULT 0,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 商户余额流水
+CREATE TABLE IF NOT EXISTS tb_merchant_balance_log (
+    log_id           BIGINT PRIMARY KEY,
+    merchant_id      BIGINT NOT NULL,
+    change_type      TINYINT,
+    amount           DECIMAL(10,2),
+    balance_before   DECIMAL(12,2),
+    balance_after    DECIMAL(12,2),
+    related_order_no VARCHAR(64),
+    remark           VARCHAR(255),
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_balance_log_merchant ON tb_merchant_balance_log(merchant_id);
+
+-- 补充 tb_merchant 表的 service_fee_mode 列
+ALTER TABLE tb_merchant ADD COLUMN IF NOT EXISTS service_fee_mode TINYINT DEFAULT 2;
+
+-- ============================================================
+-- AI服务与发票管理表
+-- ============================================================
+
+-- AI模型配置表
+CREATE TABLE IF NOT EXISTS tb_ai_model_config (
+    config_id        BIGINT PRIMARY KEY,
+    provider_code    VARCHAR(32) NOT NULL,
+    provider_name    VARCHAR(64) NOT NULL,
+    model_name       VARCHAR(64) NOT NULL,
+    api_endpoint     VARCHAR(255),
+    api_key          VARCHAR(512),
+    is_default       TINYINT DEFAULT 0,
+    status           TINYINT DEFAULT 1,
+    input_price      DECIMAL(10,6),
+    output_price     DECIMAL(10,6),
+    max_tokens       INT DEFAULT 4096,
+    temperature      DECIMAL(3,2) DEFAULT 0.70,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ai_model_provider ON tb_ai_model_config(provider_code);
+CREATE INDEX IF NOT EXISTS idx_ai_model_default ON tb_ai_model_config(is_default, status);
+
+-- AI对话会话表
+CREATE TABLE IF NOT EXISTS tb_ai_conversation (
+    conversation_id  BIGINT PRIMARY KEY,
+    user_id          BIGINT NOT NULL,
+    title            VARCHAR(128),
+    model_config_id  BIGINT,
+    message_count    INT DEFAULT 0,
+    total_tokens     INT DEFAULT 0,
+    total_cost       DECIMAL(10,4) DEFAULT 0,
+    status           TINYINT DEFAULT 1,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ai_conv_user ON tb_ai_conversation(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_conv_created ON tb_ai_conversation(created_at);
+
+-- AI对话消息表
+CREATE TABLE IF NOT EXISTS tb_ai_message (
+    message_id       BIGINT PRIMARY KEY,
+    conversation_id  BIGINT NOT NULL,
+    user_id          BIGINT NOT NULL,
+    role             VARCHAR(16) NOT NULL,
+    content          CLOB NOT NULL,
+    input_tokens     INT DEFAULT 0,
+    output_tokens    INT DEFAULT 0,
+    cost             DECIMAL(10,6) DEFAULT 0,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ai_msg_conv ON tb_ai_message(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_ai_msg_user ON tb_ai_message(user_id);
+
+-- AI调用日账单表
+CREATE TABLE IF NOT EXISTS tb_ai_usage_daily (
+    daily_id         BIGINT PRIMARY KEY,
+    stat_date        DATE NOT NULL,
+    model_config_id  BIGINT,
+    call_count       INT DEFAULT 0,
+    total_input_tokens  INT DEFAULT 0,
+    total_output_tokens INT DEFAULT 0,
+    total_cost       DECIMAL(12,4) DEFAULT 0,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_usage_date_model ON tb_ai_usage_daily(stat_date, model_config_id);
+
+-- 发票信息表
+CREATE TABLE IF NOT EXISTS tb_invoice (
+    invoice_id       BIGINT PRIMARY KEY,
+    user_id          BIGINT NOT NULL,
+    merchant_id      BIGINT NOT NULL,
+    consume_record_id BIGINT,
+    invoice_no       VARCHAR(64),
+    invoice_code     VARCHAR(32),
+    invoice_type     TINYINT DEFAULT 1,
+    invoice_status   TINYINT DEFAULT 0,
+    invoice_amount   DECIMAL(10,2),
+    invoice_title    VARCHAR(128),
+    tax_number       VARCHAR(32),
+    invoice_url      VARCHAR(512),
+    invoice_date     DATE,
+    request_time     TIMESTAMP,
+    complete_time    TIMESTAMP,
+    sync_time        TIMESTAMP,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_invoice_user ON tb_invoice(user_id);
+CREATE INDEX IF NOT EXISTS idx_invoice_merchant ON tb_invoice(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_invoice_status ON tb_invoice(invoice_status);
+
+-- 用户发票抬头设置表
+CREATE TABLE IF NOT EXISTS tb_user_invoice_setting (
+    setting_id       BIGINT PRIMARY KEY,
+    user_id          BIGINT NOT NULL,
+    title_type       TINYINT DEFAULT 1,
+    invoice_title    VARCHAR(128) NOT NULL,
+    tax_number       VARCHAR(32),
+    bank_name        VARCHAR(64),
+    bank_account     VARCHAR(32),
+    company_address  VARCHAR(255),
+    company_phone    VARCHAR(16),
+    is_default       TINYINT DEFAULT 0,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_invoice_setting_user ON tb_user_invoice_setting(user_id);
+CREATE INDEX IF NOT EXISTS idx_invoice_setting_default ON tb_user_invoice_setting(user_id, is_default);
+
+-- ============================================================
+-- 城市管理表
+-- ============================================================
+
+-- 开通城市表
+CREATE TABLE IF NOT EXISTS tb_open_city (
+    city_id           BIGINT PRIMARY KEY,
+    city_code         VARCHAR(32) NOT NULL UNIQUE,
+    city_name         VARCHAR(64) NOT NULL,
+    province_name     VARCHAR(64),
+    pinyin            VARCHAR(8),
+    level             TINYINT DEFAULT 2,
+    longitude         DECIMAL(10,6),
+    latitude          DECIMAL(10,6),
+    merchant_count    INT DEFAULT 0,
+    activity_count    INT DEFAULT 0,
+    status            TINYINT DEFAULT 1,
+    sort_order        INT DEFAULT 0,
+    open_date         DATE,
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_city_status ON tb_open_city(status);
+CREATE INDEX IF NOT EXISTS idx_city_pinyin ON tb_open_city(pinyin);
+CREATE INDEX IF NOT EXISTS idx_city_sort ON tb_open_city(sort_order DESC, merchant_count DESC);
+
+-- ============================================================
+-- 拼团功能表
+-- ============================================================
+
+-- 拼团配置表
+CREATE TABLE IF NOT EXISTS tb_group_buy_config (
+    config_id          BIGINT PRIMARY KEY,
+    activity_id        BIGINT NOT NULL UNIQUE,
+    min_members        INT DEFAULT 2,
+    max_members        INT DEFAULT 10,
+    expire_hours       INT DEFAULT 24,
+    auto_refund        TINYINT DEFAULT 1,
+    allow_self_buy     TINYINT DEFAULT 0,
+    created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_groupconfig_activity ON tb_group_buy_config(activity_id);
+
+-- 拼团记录表
+CREATE TABLE IF NOT EXISTS tb_group_order (
+    group_order_id     BIGINT PRIMARY KEY,
+    group_no           VARCHAR(32) NOT NULL UNIQUE,
+    activity_id        BIGINT NOT NULL,
+    initiator_user_id  BIGINT NOT NULL,
+    required_members   INT NOT NULL,
+    current_members    INT DEFAULT 1,
+    status             TINYINT DEFAULT 0,
+    expire_time        TIMESTAMP NOT NULL,
+    complete_time      TIMESTAMP,
+    created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_grouporder_activity ON tb_group_order(activity_id);
+CREATE INDEX IF NOT EXISTS idx_grouporder_status_expire ON tb_group_order(status, expire_time);
+CREATE INDEX IF NOT EXISTS idx_grouporder_initiator ON tb_group_order(initiator_user_id);
+
+-- 拼团参与者表
+CREATE TABLE IF NOT EXISTS tb_group_participant (
+    participant_id     BIGINT PRIMARY KEY,
+    group_order_id     BIGINT NOT NULL,
+    user_id            BIGINT NOT NULL,
+    order_id           BIGINT,
+    is_initiator       TINYINT DEFAULT 0,
+    join_time          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_participant_group ON tb_group_participant(group_order_id);
+CREATE INDEX IF NOT EXISTS idx_participant_user ON tb_group_participant(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_participant_group_user ON tb_group_participant(group_order_id, user_id);

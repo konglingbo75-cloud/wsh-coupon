@@ -1,5 +1,11 @@
 <template>
   <view class="mine-page">
+    <!-- AI助手悬浮按钮 -->
+    <view class="ai-float-btn" @tap="goAiChat">
+      <text class="ai-icon">🤖</text>
+      <text class="ai-text">AI助手</text>
+    </view>
+
     <!-- 用户信息卡片 -->
     <view class="user-card">
       <view class="user-info" v-if="userStore.isLoggedIn">
@@ -40,9 +46,9 @@
           <text class="icon">🎫</text>
           <text>我的券包</text>
         </view>
-        <view class="menu-item" @tap="goVouchers(0)">
-          <text class="icon">✨</text>
-          <text>可使用</text>
+        <view class="menu-item" @tap="goInvoices">
+          <text class="icon">🧾</text>
+          <text>我的发票</text>
         </view>
       </view>
     </view>
@@ -80,6 +86,12 @@
     <view class="menu-section">
       <view class="menu-title">其他</view>
       <view class="menu-list">
+        <view class="menu-row highlight" @tap="goAiChat">
+          <text class="icon">🤖</text>
+          <text class="label">AI智能助手</text>
+          <view class="new-tag">NEW</view>
+          <text class="arrow">›</text>
+        </view>
         <view class="menu-row" @tap="goSettings">
           <text class="icon">⚙️</text>
           <text class="label">设置</text>
@@ -127,7 +139,7 @@ function goLogin() {
 }
 
 function goMerchantAdmin() {
-  uni.navigateTo({ url: '/subPackages/admin/dashboard' })
+  uni.navigateTo({ url: '/pages/admin/dashboard' })
 }
 
 function goOrders(status?: number) {
@@ -136,8 +148,8 @@ function goOrders(status?: number) {
     return
   }
   const url = status !== undefined 
-    ? `/subPackages/consumer/order/list?status=${status}`
-    : '/subPackages/consumer/order/list'
+    ? `/pages/consumer/order/list?status=${status}`
+    : '/pages/consumer/order/list'
   uni.navigateTo({ url })
 }
 
@@ -147,9 +159,17 @@ function goVouchers(status?: number) {
     return
   }
   const url = status !== undefined 
-    ? `/subPackages/consumer/voucher/list?status=${status}`
-    : '/subPackages/consumer/voucher/list'
+    ? `/pages/consumer/voucher/list?status=${status}`
+    : '/pages/consumer/voucher/list'
   uni.navigateTo({ url })
+}
+
+function goInvoices() {
+  if (!userStore.isLoggedIn) {
+    goLogin()
+    return
+  }
+  uni.navigateTo({ url: '/pages/consumer/invoice/list' })
 }
 
 function goMembers() {
@@ -157,7 +177,7 @@ function goMembers() {
     goLogin()
     return
   }
-  uni.navigateTo({ url: '/subPackages/consumer/member/list' })
+  uni.navigateTo({ url: '/pages/consumer/member/list' })
 }
 
 function goEquitySummary() {
@@ -165,7 +185,7 @@ function goEquitySummary() {
     goLogin()
     return
   }
-  uni.navigateTo({ url: '/subPackages/consumer/equity/summary' })
+  uni.navigateTo({ url: '/pages/consumer/equity/summary' })
 }
 
 function goExpiring() {
@@ -173,7 +193,7 @@ function goExpiring() {
     goLogin()
     return
   }
-  uni.navigateTo({ url: '/subPackages/consumer/equity/expiring' })
+  uni.navigateTo({ url: '/pages/consumer/equity/expiring' })
 }
 
 function goMessages() {
@@ -181,7 +201,15 @@ function goMessages() {
     goLogin()
     return
   }
-  uni.navigateTo({ url: '/subPackages/consumer/message/list' })
+  uni.navigateTo({ url: '/pages/consumer/message/list' })
+}
+
+function goAiChat() {
+  if (!userStore.isLoggedIn) {
+    goLogin()
+    return
+  }
+  uni.navigateTo({ url: '/pages/consumer/ai/chat' })
 }
 
 function goSettings() {
@@ -210,6 +238,45 @@ function handleLogout() {
   min-height: 100vh;
   background: #f5f7fa;
   padding-bottom: 40rpx;
+}
+
+// AI悬浮按钮
+.ai-float-btn {
+  position: fixed;
+  right: 32rpx;
+  bottom: 200rpx;
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.5);
+  z-index: 100;
+  animation: pulse 2s infinite;
+  
+  .ai-icon {
+    font-size: 36rpx;
+  }
+  
+  .ai-text {
+    font-size: 20rpx;
+    color: #fff;
+    margin-top: 4rpx;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.5);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 12rpx 40rpx rgba(102, 126, 234, 0.7);
+  }
 }
 
 .user-card {
@@ -315,6 +382,10 @@ function handleLogout() {
       border-bottom: none;
     }
     
+    &.highlight {
+      background: linear-gradient(90deg, rgba(102, 126, 234, 0.08) 0%, transparent 100%);
+    }
+    
     .icon {
       font-size: 40rpx;
       margin-right: 20rpx;
@@ -332,6 +403,17 @@ function handleLogout() {
       color: #999;
       text-align: right;
       margin-right: 12rpx;
+    }
+    
+    .new-tag {
+      flex: 1;
+      font-size: 20rpx;
+      color: #fff;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      padding: 4rpx 12rpx;
+      border-radius: 16rpx;
+      margin-right: 12rpx;
+      width: fit-content;
     }
     
     .arrow {

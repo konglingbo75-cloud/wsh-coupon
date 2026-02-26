@@ -5,8 +5,10 @@ import com.wsh.common.core.constant.Constants;
 import com.wsh.common.redis.util.RedisUtil;
 import com.wsh.domain.entity.MerchantMemberSnapshot;
 import com.wsh.domain.entity.UserEquitySummary;
+import com.wsh.domain.entity.Voucher;
 import com.wsh.domain.mapper.MerchantMemberSnapshotMapper;
 import com.wsh.domain.mapper.UserEquitySummaryMapper;
+import com.wsh.domain.mapper.VoucherMapper;
 import com.wsh.equity.dto.EquitySummaryResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ public class EquitySummaryService {
 
     private final MerchantMemberSnapshotMapper snapshotMapper;
     private final UserEquitySummaryMapper summaryMapper;
+    private final VoucherMapper voucherMapper;
     private final RedisUtil redisUtil;
 
     /** 缓存有效期：2小时 */
@@ -128,9 +131,23 @@ public class EquitySummaryService {
             }
         }
 
-        // TODO: 后续从 tb_voucher 表统计未使用券的总价值和即将过期券数量
+        // 从 tb_voucher 实时统计未使用券的总价值和即将过期券数量
+        List<Voucher> unusedVouchers = voucherMapper.selectUnusedByUserId(userId);
         BigDecimal totalVoucherValue = BigDecimal.ZERO;
         int expiringVoucherCount = 0;
+
+        for (Voucher v : unusedVouchers) {
+            if (v.getVoucherValue() != null && v.getVoucherValue().compareTo(BigDecimal.ZERO) > 0) {
+                totalVoucherValue = totalVoucherValue.add(v.getVoucherValue());
+            }
+            // 7天内过期的券
+            if (v.getValidEndTime() != null) {
+                LocalDate expireDate = v.getValidEndTime().toLocalDate();
+                if (!expireDate.isBefore(now) && !expireDate.isAfter(sevenDaysLater)) {
+                    expiringVoucherCount++;
+                }
+            }
+        }
 
         // 保存或更新汇总
         if (existing != null) {

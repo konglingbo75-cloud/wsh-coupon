@@ -7,11 +7,13 @@
   "transformPx": false,
   "mp-weixin": {
     "appid": "wxd34a73fd1f1a4f6b",
+    "libVersion": "3.3.5",
     "setting": {
       "urlCheck": false,
       "minified": true,
       "es6": true,
-      "postcss": true
+      "postcss": true,
+      "bigPackageSizeSupport": true
     },
     "usingComponents": true,
     "permission": {

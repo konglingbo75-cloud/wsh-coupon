@@ -72,9 +72,12 @@ const isCollapse = ref(false)
 const menuItems = [
   { path: '/dashboard', title: '仪表盘', icon: 'DataBoard' },
   { path: '/merchants', title: '商户管理', icon: 'Shop' },
+  { path: '/cities', title: '城市管理', icon: 'Location' },
   { path: '/users', title: '用户管理', icon: 'User' },
   { path: '/activities', title: '活动管理', icon: 'Present' },
+  { path: '/group-orders', title: '拼团管理', icon: 'Connection' },
   { path: '/billing', title: '费用管理', icon: 'Money' },
+  { path: '/ai', title: 'AI管理', icon: 'ChatDotRound' },
   { path: '/logs', title: '操作日志', icon: 'Document' }
 ]
 

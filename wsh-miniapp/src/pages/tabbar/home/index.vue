@@ -1,16 +1,29 @@
 <template>
-  <view class="index-page">
+  <view class="index-page cyber-theme">
+    <!-- 城市选择器 -->
+    <CitySelector 
+      v-model:visible="showCitySelector" 
+      @select="onCitySelected"
+    />
+    
+    <!-- AI悬浮按钮 -->
+    <AiFab />
+    
+    <!-- 扫描线动效 -->
+    <view class="scan-line"></view>
+    
     <!-- 未登录时显示公开活动 -->
     <template v-if="!userStore.isLoggedIn">
       <view class="guest-header">
         <text class="title">同城活动广场</text>
-        <view class="city-select" @tap="selectCity">
-          <text>{{ appStore.currentCity }}</text>
+        <view class="city-select" @tap="openCitySelector">
+          <text>{{ appStore.currentCityName }}</text>
           <text class="arrow">▼</text>
         </view>
       </view>
       
       <view class="login-banner" @tap="goLogin">
+        <view class="banner-glow"></view>
         <text>登录查看您的权益资产</text>
         <text class="btn">立即登录 →</text>
       </view>
@@ -19,14 +32,20 @@
     <!-- 已登录时显示权益总览 -->
     <template v-else>
       <view class="equity-header">
+        <view class="header-bg"></view>
         <view class="user-info">
           <image class="avatar" :src="userStore.avatarUrl || '/static/default-avatar.png'" />
           <text class="greeting">Hi, {{ userStore.nickname || '会员' }}</text>
+        </view>
+        <view class="city-select" @tap="openCitySelector">
+          <text>{{ appStore.currentCityName }}</text>
+          <text class="arrow">▼</text>
         </view>
       </view>
       
       <!-- 权益卡片 -->
       <view class="equity-card" @tap="goEquitySummary">
+        <view class="card-glow"></view>
         <view class="card-header">
           <text class="title">我的权益资产</text>
           <text class="action">查看详情 →</text>
@@ -73,9 +92,9 @@
         <view class="icon-wrap order">📋</view>
         <text>我的订单</text>
       </view>
-      <view class="entry-item" @tap="goVouchers">
-        <view class="icon-wrap voucher">🎫</view>
-        <text>我的券包</text>
+      <view class="entry-item" @tap="goGroupBuy">
+        <view class="icon-wrap groupbuy">🎯</view>
+        <text>我的拼团</text>
       </view>
     </view>
     
@@ -113,12 +132,21 @@ import { useUserStore } from '@/store/user'
 import { useEquityStore } from '@/store/equity'
 import { useAppStore } from '@/store/app'
 import { getPublicActivities, type PublicActivity } from '@/api/public'
+import CitySelector from '@/components/CitySelector.vue'
+import AiFab from '@/components/AiFab.vue'
+import type { CityItem } from '@/api/city'
 
 const userStore = useUserStore()
 const equityStore = useEquityStore()
 const appStore = useAppStore()
 
 const recommendActivities = ref<PublicActivity[]>([])
+const showCitySelector = ref(false)
+
+onMounted(() => {
+  // 初始化城市
+  appStore.initCity()
+})
 
 onShow(() => {
   loadData()
@@ -127,7 +155,7 @@ onShow(() => {
 async function loadData() {
   // 加载推荐活动
   try {
-    const res = await getPublicActivities(appStore.currentCity)
+    const res = await getPublicActivities(appStore.currentCityName)
     // 取各类型前2个作为推荐
     recommendActivities.value = [
       ...res.voucherActivities.slice(0, 2),
@@ -149,9 +177,13 @@ function formatMoney(value: number): string {
   return value.toFixed(2)
 }
 
-function selectCity() {
-  // TODO: 城市选择
-  uni.showToast({ title: '城市选择功能开发中', icon: 'none' })
+function openCitySelector() {
+  showCitySelector.value = true
+}
+
+function onCitySelected(city: CityItem) {
+  // 城市切换后重新加载数据
+  loadData()
 }
 
 function goLogin() {
@@ -159,15 +191,15 @@ function goLogin() {
 }
 
 function goEquitySummary() {
-  uni.navigateTo({ url: '/subPackages/consumer/equity/summary' })
+  uni.navigateTo({ url: '/pages/consumer/equity/summary' })
 }
 
 function goExpiring() {
-  uni.navigateTo({ url: '/subPackages/consumer/equity/expiring' })
+  uni.navigateTo({ url: '/pages/consumer/equity/expiring' })
 }
 
 function goNearby() {
-  uni.navigateTo({ url: '/subPackages/consumer/activity/nearby' })
+  uni.navigateTo({ url: '/pages/consumer/activity/nearby' })
 }
 
 function goMembers() {
@@ -175,7 +207,7 @@ function goMembers() {
     goLogin()
     return
   }
-  uni.navigateTo({ url: '/subPackages/consumer/member/list' })
+  uni.navigateTo({ url: '/pages/consumer/member/list' })
 }
 
 function goOrders() {
@@ -183,15 +215,15 @@ function goOrders() {
     goLogin()
     return
   }
-  uni.navigateTo({ url: '/subPackages/consumer/order/list' })
+  uni.navigateTo({ url: '/pages/consumer/order/list' })
 }
 
-function goVouchers() {
+function goGroupBuy() {
   if (!userStore.isLoggedIn) {
     goLogin()
     return
   }
-  uni.navigateTo({ url: '/subPackages/consumer/voucher/list' })
+  uni.navigateTo({ url: '/pages/consumer/groupbuy/list' })
 }
 
 function goActivityList() {
@@ -199,15 +231,45 @@ function goActivityList() {
 }
 
 function goActivityDetail(id: number) {
-  uni.navigateTo({ url: `/subPackages/consumer/activity/detail?id=${id}` })
+  uni.navigateTo({ url: `/pages/consumer/activity/detail?id=${id}` })
 }
 </script>
 
 <style lang="scss" scoped>
-.index-page {
+/* 赛博朋克配色 */
+$cyber-primary: #00f2ff;
+$cyber-purple: #7928ca;
+$cyber-pink: #ff0080;
+$cyber-orange: #ff4500;
+$dark-bg: #0a0a0f;
+$dark-card: #1a1a25;
+$dark-border: rgba(255, 255, 255, 0.1);
+
+.index-page.cyber-theme {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: linear-gradient(180deg, $dark-bg 0%, #12121a 100%);
   padding-bottom: 40rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 扫描线动效 */
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, transparent, $cyber-primary, transparent);
+  opacity: 0.5;
+  animation: scan 4s linear infinite;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@keyframes scan {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100vh); }
 }
 
 .guest-header {
@@ -215,11 +277,15 @@ function goActivityDetail(id: number) {
   justify-content: space-between;
   align-items: center;
   padding: 32rpx;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20rpx);
+  border-bottom: 1rpx solid $dark-border;
   
   .title {
     font-size: 36rpx;
     font-weight: 600;
+    color: #fff;
+    text-shadow: 0 0 20rpx rgba($cyber-primary, 0.5);
   }
   
   .city-select {
@@ -227,7 +293,10 @@ function goActivityDetail(id: number) {
     align-items: center;
     gap: 8rpx;
     font-size: 28rpx;
-    color: #666;
+    color: $cyber-primary;
+    padding: 12rpx 20rpx;
+    border: 1rpx solid rgba($cyber-primary, 0.3);
+    border-radius: 8rpx;
     
     .arrow {
       font-size: 20rpx;
@@ -240,30 +309,59 @@ function goActivityDetail(id: number) {
   justify-content: space-between;
   align-items: center;
   margin: 24rpx;
-  padding: 24rpx 32rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 28rpx 32rpx;
+  background: linear-gradient(135deg, rgba($cyber-primary, 0.2) 0%, rgba($cyber-purple, 0.2) 100%);
+  border: 1rpx solid rgba($cyber-primary, 0.3);
   border-radius: 16rpx;
   color: #fff;
+  position: relative;
+  overflow: hidden;
+  
+  .banner-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2rpx;
+    background: linear-gradient(90deg, $cyber-primary, $cyber-purple);
+  }
   
   .btn {
     font-weight: 500;
+    color: $cyber-primary;
   }
 }
 
 .equity-header {
   padding: 32rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  .header-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba($cyber-purple, 0.3) 0%, rgba($cyber-primary, 0.1) 100%);
+    z-index: 0;
+  }
   
   .user-info {
     display: flex;
     align-items: center;
     gap: 20rpx;
+    position: relative;
+    z-index: 1;
     
     .avatar {
       width: 80rpx;
       height: 80rpx;
       border-radius: 50%;
-      border: 4rpx solid rgba(255,255,255,0.3);
+      border: 3rpx solid $cyber-primary;
+      box-shadow: 0 0 20rpx rgba($cyber-primary, 0.5);
     }
     
     .greeting {
@@ -272,14 +370,40 @@ function goActivityDetail(id: number) {
       font-weight: 500;
     }
   }
+  
+  .city-select {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    font-size: 26rpx;
+    color: $cyber-primary;
+    position: relative;
+    z-index: 1;
+    
+    .arrow {
+      font-size: 18rpx;
+    }
+  }
 }
 
 .equity-card {
-  margin: -40rpx 24rpx 24rpx;
+  margin: 24rpx;
   padding: 32rpx;
-  background: #fff;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20rpx);
+  border: 1rpx solid $dark-border;
+  border-radius: 20rpx;
+  position: relative;
+  overflow: hidden;
+  
+  .card-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2rpx;
+    background: linear-gradient(90deg, $cyber-primary, $cyber-purple, $cyber-pink);
+  }
   
   .card-header {
     display: flex;
@@ -289,13 +413,13 @@ function goActivityDetail(id: number) {
     
     .title {
       font-size: 28rpx;
-      color: #333;
+      color: rgba(255, 255, 255, 0.7);
       font-weight: 500;
     }
     
     .action {
       font-size: 24rpx;
-      color: #667eea;
+      color: $cyber-primary;
     }
   }
   
@@ -306,13 +430,14 @@ function goActivityDetail(id: number) {
     
     .symbol {
       font-size: 32rpx;
-      color: #333;
+      color: $cyber-primary;
     }
     
     .amount {
       font-size: 64rpx;
       font-weight: 700;
-      color: #333;
+      color: #fff;
+      text-shadow: 0 0 30rpx rgba($cyber-primary, 0.5);
     }
   }
   
@@ -320,7 +445,7 @@ function goActivityDetail(id: number) {
     display: flex;
     justify-content: space-between;
     padding-top: 24rpx;
-    border-top: 1rpx solid #f0f0f0;
+    border-top: 1rpx solid $dark-border;
     
     .item {
       display: flex;
@@ -330,12 +455,12 @@ function goActivityDetail(id: number) {
       
       .label {
         font-size: 24rpx;
-        color: #999;
+        color: rgba(255, 255, 255, 0.4);
       }
       
       .value {
         font-size: 28rpx;
-        color: #333;
+        color: #fff;
         font-weight: 500;
       }
     }
@@ -347,9 +472,9 @@ function goActivityDetail(id: number) {
   align-items: center;
   margin: 0 24rpx 24rpx;
   padding: 20rpx 24rpx;
-  background: #fff8e6;
+  background: rgba($cyber-orange, 0.15);
   border-radius: 12rpx;
-  border: 1rpx solid #ffe58f;
+  border: 1rpx solid rgba($cyber-orange, 0.3);
   
   .icon {
     font-size: 32rpx;
@@ -359,12 +484,12 @@ function goActivityDetail(id: number) {
   .text {
     flex: 1;
     font-size: 26rpx;
-    color: #d48806;
+    color: $cyber-orange;
   }
   
   .action {
     font-size: 26rpx;
-    color: #d48806;
+    color: $cyber-orange;
     font-weight: 500;
   }
 }
@@ -374,8 +499,10 @@ function goActivityDetail(id: number) {
   justify-content: space-around;
   padding: 32rpx 24rpx;
   margin: 0 24rpx 24rpx;
-  background: #fff;
-  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20rpx);
+  border: 1rpx solid $dark-border;
+  border-radius: 20rpx;
   
   .entry-item {
     display: flex;
@@ -391,16 +518,29 @@ function goActivityDetail(id: number) {
       justify-content: center;
       border-radius: 20rpx;
       font-size: 36rpx;
+      border: 1rpx solid $dark-border;
       
-      &.nearby { background: #e3f2fd; }
-      &.member { background: #f3e5f5; }
-      &.order { background: #e8f5e9; }
-      &.voucher { background: #fff3e0; }
+      &.nearby { 
+        background: rgba($cyber-primary, 0.15);
+        border-color: rgba($cyber-primary, 0.3);
+      }
+      &.member { 
+        background: rgba($cyber-purple, 0.15);
+        border-color: rgba($cyber-purple, 0.3);
+      }
+      &.order { 
+        background: rgba(#00ff88, 0.15);
+        border-color: rgba(#00ff88, 0.3);
+      }
+      &.groupbuy { 
+        background: rgba($cyber-pink, 0.15);
+        border-color: rgba($cyber-pink, 0.3);
+      }
     }
     
     text:last-child {
       font-size: 24rpx;
-      color: #666;
+      color: rgba(255, 255, 255, 0.7);
     }
   }
 }
@@ -417,12 +557,12 @@ function goActivityDetail(id: number) {
     .title {
       font-size: 32rpx;
       font-weight: 600;
-      color: #333;
+      color: #fff;
     }
     
     .more {
       font-size: 26rpx;
-      color: #999;
+      color: $cyber-primary;
     }
   }
 }
@@ -434,8 +574,10 @@ function goActivityDetail(id: number) {
   
   .activity-card {
     width: calc(50% - 10rpx);
-    background: #fff;
-    border-radius: 12rpx;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10rpx);
+    border: 1rpx solid $dark-border;
+    border-radius: 16rpx;
     overflow: hidden;
     
     .cover {
@@ -448,7 +590,7 @@ function goActivityDetail(id: number) {
       
       .name {
         font-size: 28rpx;
-        color: #333;
+        color: #fff;
         font-weight: 500;
         display: -webkit-box;
         -webkit-line-clamp: 1;
@@ -458,7 +600,7 @@ function goActivityDetail(id: number) {
       
       .merchant {
         font-size: 24rpx;
-        color: #999;
+        color: rgba(255, 255, 255, 0.5);
         margin-top: 8rpx;
       }
       
@@ -470,13 +612,14 @@ function goActivityDetail(id: number) {
         
         .price {
           font-size: 32rpx;
-          color: #e53935;
+          color: $cyber-pink;
           font-weight: 600;
+          text-shadow: 0 0 10rpx rgba($cyber-pink, 0.5);
         }
         
         .original {
           font-size: 24rpx;
-          color: #999;
+          color: rgba(255, 255, 255, 0.4);
           text-decoration: line-through;
         }
       }
@@ -487,7 +630,7 @@ function goActivityDetail(id: number) {
     width: 100%;
     padding: 60rpx;
     text-align: center;
-    color: #999;
+    color: rgba(255, 255, 255, 0.4);
     font-size: 28rpx;
   }
 }

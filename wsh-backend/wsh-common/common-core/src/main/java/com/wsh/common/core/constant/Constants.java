@@ -64,6 +64,16 @@ public final class Constants {
     /** 团购 */
     public static final int ACTIVITY_TYPE_GROUP = 4;
 
+    // ========== 活动状态 ==========
+    /** 草稿 */
+    public static final int ACTIVITY_STATUS_DRAFT = 0;
+    /** 进行中 */
+    public static final int ACTIVITY_STATUS_ACTIVE = 1;
+    /** 已暂停 */
+    public static final int ACTIVITY_STATUS_PAUSED = 2;
+    /** 已结束 */
+    public static final int ACTIVITY_STATUS_ENDED = 3;
+
     // ========== 目标会员类型 ==========
     /** 全部会员 */
     public static final int TARGET_MEMBER_ALL = 0;
@@ -86,6 +96,7 @@ public final class Constants {
     public static final String SYNC_SOURCE_API = "api";
     public static final String SYNC_SOURCE_MANUAL = "manual";
     public static final String SYNC_SOURCE_RPA = "rpa";
+    public static final String SYNC_SOURCE_DEMO = "demo";
 
     // ========== 入驻费状态 ==========
     /** 待支付 */
@@ -94,6 +105,20 @@ public final class Constants {
     public static final int ONBOARDING_PAY_SUCCESS = 1;
     /** 已关闭 */
     public static final int ONBOARDING_PAY_CLOSED = 2;
+
+    // ========== 服务费模式 ==========
+    /** 预付费模式 */
+    public static final int SERVICE_FEE_MODE_PREPAID = 1;
+    /** 按单扣费模式 */
+    public static final int SERVICE_FEE_MODE_PER_ORDER = 2;
+
+    // ========== 余额变动类型 ==========
+    /** 充值 */
+    public static final int BALANCE_CHANGE_RECHARGE = 1;
+    /** 扣费 */
+    public static final int BALANCE_CHANGE_DEDUCT = 2;
+    /** 退款 */
+    public static final int BALANCE_CHANGE_REFUND = 3;
 
     // ========== 权益提醒类型 ==========
     /** 积分过期 */

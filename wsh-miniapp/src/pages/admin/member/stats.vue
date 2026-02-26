@@ -120,22 +120,20 @@ const onDateChange = (e: any) => {
 
 const loadStats = async () => {
   try {
-    const res = await get<{
+    const data = await get<{
       stats: Stats
       levelDistribution: LevelItem[]
       topMembers: MemberItem[]
-    }>('/admin/members/stats', {
+    }>('/v1/merchant/members/stats', {
       month: selectedDate.value,
       rankType: rankType.value
     })
     
-    if (res.code === 0) {
-      stats.value = res.data.stats
-      levelDistribution.value = res.data.levelDistribution || []
-      topMembers.value = res.data.topMembers || []
-    }
+    stats.value = data.stats
+    levelDistribution.value = data.levelDistribution || []
+    topMembers.value = data.topMembers || []
   } catch (e) {
-    uni.showToast({ title: '加载失败', icon: 'none' })
+    console.error('加载统计失败', e)
   }
 }
 

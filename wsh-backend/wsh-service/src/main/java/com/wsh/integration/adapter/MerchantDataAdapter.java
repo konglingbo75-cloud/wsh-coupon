@@ -37,4 +37,16 @@ public interface MerchantDataAdapter {
      * 获取适配器类型标识
      */
     String getType();
+
+    /**
+     * 通知商户系统核销结果（默认空实现，各适配器按需覆盖）
+     *
+     * @param merchantId  商户ID
+     * @param voucherCode 券码
+     * @param verifyTime  核销时间
+     * @return true=同步成功, false=同步失败
+     */
+    default boolean notifyVerification(Long merchantId, String voucherCode, java.time.LocalDateTime verifyTime) {
+        return true;
+    }
 }

@@ -387,14 +387,21 @@ public class VerificationService {
     @Async
     protected void asyncSyncToMerchant(VerificationRecord record) {
         try {
-            // 获取商户适配器并同步
             var adapter = adapterFactory.getAdapter(record.getMerchantId());
             if (adapter != null) {
-                // TODO: 实现核销同步到商户系统
-                log.debug("异步同步核销到商户系统: recordId={}", record.getRecordId());
+                boolean success = adapter.notifyVerification(
+                        record.getMerchantId(),
+                        record.getVoucherCode(),
+                        record.getVerifyTime());
+                // 更新同步状态
+                record.setSyncStatus(success ? 1 : 2);
+                verificationRecordMapper.updateById(record);
+                log.info("核销同步到商户系统{}: recordId={}", success ? "成功" : "失败", record.getRecordId());
             }
         } catch (Exception e) {
-            log.error("同步核销到商户系统失败: recordId={}", record.getRecordId(), e);
+            log.error("同步核销到商户系统异常: recordId={}", record.getRecordId(), e);
+            record.setSyncStatus(2);
+            verificationRecordMapper.updateById(record);
         }
     }
 

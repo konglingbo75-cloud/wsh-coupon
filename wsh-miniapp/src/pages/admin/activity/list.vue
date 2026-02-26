@@ -31,7 +31,7 @@
             <text class="title">{{ item.title }}</text>
             <view class="tags">
               <text class="tag type">{{ getTypeName(item.type) }}</text>
-              <text class="tag status" :class="item.status">{{ getStatusText(item.status) }}</text>
+              <text class="tag status" :class="getStatusClass(item.status)">{{ getStatusText(item.status) }}</text>
             </view>
             <view class="price-row">
               <text class="price">¥{{ item.price }}</text>
@@ -66,9 +66,9 @@
         
         <view class="card-footer">
           <button class="action-btn" @click="editActivity(item)">编辑</button>
-          <button v-if="item.status === 'draft'" class="action-btn primary" @click="publishActivity(item)">发布</button>
-          <button v-if="item.status === 'active'" class="action-btn warning" @click="pauseActivity(item)">暂停</button>
-          <button v-if="item.status === 'paused'" class="action-btn primary" @click="resumeActivity(item)">恢复</button>
+          <button v-if="item.status === 0" class="action-btn primary" @click="publishActivity(item)">发布</button>
+          <button v-if="item.status === 1" class="action-btn warning" @click="pauseActivity(item)">暂停</button>
+          <button v-if="item.status === 2" class="action-btn primary" @click="resumeActivity(item)">恢复</button>
           <button class="action-btn" @click="viewDetail(item)">数据</button>
         </view>
       </view>
@@ -94,13 +94,13 @@ import { ref, watch, onMounted } from 'vue'
 import { get, post } from '@/api/request'
 
 interface ActivityItem {
-  id: string
+  id: number
   title: string
-  type: 'voucher' | 'deposit' | 'points' | 'group'
+  type: number
   coverUrl: string
   price: number
   originalPrice?: number
-  status: 'draft' | 'active' | 'paused' | 'ended'
+  status: number
   soldCount: number
   remainStock: number
   verifiedCount: number
@@ -125,24 +125,43 @@ const noMore = ref(false)
 const page = ref(1)
 const pageSize = 10
 
-const getTypeName = (type: string) => {
-  const map: Record<string, string> = {
-    voucher: '优惠券',
-    deposit: '储值',
-    points: '积分',
-    group: '团购'
+const getTypeName = (type: number) => {
+  const map: Record<number, string> = {
+    1: '代金券',
+    2: '储值',
+    3: '积分',
+    4: '团购'
   }
-  return map[type] || type
+  return map[type] || '未知'
 }
 
-const getStatusText = (status: string) => {
-  const map: Record<string, string> = {
-    draft: '草稿',
-    active: '进行中',
-    paused: '已暂停',
-    ended: '已结束'
+const getStatusText = (status: number) => {
+  const map: Record<number, string> = {
+    0: '草稿',
+    1: '进行中',
+    2: '已暂停',
+    3: '已结束'
   }
-  return map[status] || status
+  return map[status] || '未知'
+}
+
+const getStatusClass = (status: number) => {
+  const map: Record<number, string> = {
+    0: 'draft',
+    1: 'active',
+    2: 'paused',
+    3: 'ended'
+  }
+  return map[status] || ''
+}
+
+// 状态 key → 数字映射
+const statusKeyToNum: Record<string, number | undefined> = {
+  all: undefined,
+  draft: 0,
+  active: 1,
+  paused: 2,
+  ended: 3
 }
 
 const loadActivities = async (reset = false) => {
@@ -159,32 +178,30 @@ const loadActivities = async (reset = false) => {
     const res = await get<{
       list: ActivityItem[]
       statusCounts: Record<string, number>
-    }>('/admin/activities', {
-      status: currentStatus.value === 'all' ? undefined : currentStatus.value,
+    }>('/v1/merchant/activities', {
+      status: statusKeyToNum[currentStatus.value],
       keyword: searchKey.value || undefined,
       page: page.value,
       pageSize
     })
     
-    if (res.code === 0) {
-      const list = res.data.list || []
-      if (reset) {
-        activities.value = list
-      } else {
-        activities.value = [...activities.value, ...list]
-      }
-      
-      if (list.length < pageSize) {
-        noMore.value = true
-      }
-      
-      // 更新状态计数
-      if (res.data.statusCounts) {
-        statusTabs.value = statusTabs.value.map(tab => ({
-          ...tab,
-          count: res.data.statusCounts[tab.key] || 0
-        }))
-      }
+    const list = res.list || []
+    if (reset) {
+      activities.value = list
+    } else {
+      activities.value = [...activities.value, ...list]
+    }
+    
+    if (list.length < pageSize) {
+      noMore.value = true
+    }
+    
+    // 更新状态计数
+    if (res.statusCounts) {
+      statusTabs.value = statusTabs.value.map(tab => ({
+        ...tab,
+        count: res.statusCounts[tab.key] || 0
+      }))
     }
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' })
@@ -216,11 +233,9 @@ const publishActivity = async (item: ActivityItem) => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          const result = await post(`/admin/activities/${item.id}/publish`)
-          if (result.code === 0) {
-            item.status = 'active'
-            uni.showToast({ title: '已发布', icon: 'success' })
-          }
+          await post(`/v1/merchant/activities/${item.id}/publish`)
+          item.status = 1
+          uni.showToast({ title: '已发布', icon: 'success' })
         } catch (e) {
           uni.showToast({ title: '发布失败', icon: 'none' })
         }
@@ -236,11 +251,9 @@ const pauseActivity = async (item: ActivityItem) => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          const result = await post(`/admin/activities/${item.id}/pause`)
-          if (result.code === 0) {
-            item.status = 'paused'
-            uni.showToast({ title: '已暂停', icon: 'success' })
-          }
+          await post(`/v1/merchant/activities/${item.id}/pause`)
+          item.status = 2
+          uni.showToast({ title: '已暂停', icon: 'success' })
         } catch (e) {
           uni.showToast({ title: '操作失败', icon: 'none' })
         }
@@ -251,11 +264,9 @@ const pauseActivity = async (item: ActivityItem) => {
 
 const resumeActivity = async (item: ActivityItem) => {
   try {
-    const result = await post(`/admin/activities/${item.id}/resume`)
-    if (result.code === 0) {
-      item.status = 'active'
-      uni.showToast({ title: '已恢复', icon: 'success' })
-    }
+    await post(`/v1/merchant/activities/${item.id}/resume`)
+    item.status = 1
+    uni.showToast({ title: '已恢复', icon: 'success' })
   } catch (e) {
     uni.showToast({ title: '操作失败', icon: 'none' })
   }

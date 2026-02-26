@@ -26,6 +26,7 @@ public class Merchant {
     private Integer status;
     private Integer integrationType;
     private BigDecimal profitSharingRate;
+    private Integer serviceFeeMode;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

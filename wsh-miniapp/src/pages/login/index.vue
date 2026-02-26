@@ -22,6 +22,13 @@
       </view>
     </view>
 
+    <!-- 开发模式模拟登录 -->
+    <view v-if="isDev" class="dev-section">
+      <text class="dev-title">开发调试</text>
+      <button class="dev-btn consumer" @tap="mockConsumerLogin">模拟消费者登录</button>
+      <button class="dev-btn merchant" @tap="mockMerchantLogin">模拟商户登录</button>
+    </view>
+
     <!-- 底部装饰 -->
     <view class="bottom-decoration">
       <view class="feature-list">
@@ -45,9 +52,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useUserStore } from '@/store/user'
+import { setToken } from '@/api/request'
 
 const userStore = useUserStore()
 const loading = ref(false)
+
+// 开发模式判断：BASE_URL 指向 localhost 时为开发环境
+const isDev = ref(true) // 开发阶段始终显示
 
 async function handleLogin() {
   if (loading.value) return
@@ -74,6 +85,33 @@ async function handleLogin() {
   } finally {
     loading.value = false
   }
+}
+
+function doMockLogin(role: string) {
+  const isMerchant = role === 'merchant'
+  const mockToken = isMerchant ? 'mock_merchant_token_200001' : 'mock_user_token_100001'
+  setToken(mockToken)
+  userStore.setUserInfo({
+    token: mockToken,
+    userId: isMerchant ? 200001 : 100001,
+    openid: isMerchant ? 'mock_openid_002' : 'mock_openid_001',
+    nickname: isMerchant ? '测试商户' : '测试用户',
+    avatarUrl: '',
+    phone: isMerchant ? '13900139000' : '13800138000',
+    role: isMerchant ? 1 : 0
+  })
+  uni.showToast({ title: '登录成功', icon: 'success' })
+  setTimeout(() => {
+    uni.switchTab({ url: '/pages/tabbar/home/index' })
+  }, 500)
+}
+
+function mockConsumerLogin() {
+  doMockLogin('consumer')
+}
+
+function mockMerchantLogin() {
+  doMockLogin('merchant')
 }
 
 function showPrivacy() {
@@ -178,6 +216,39 @@ function showPrivacy() {
         font-size: 24rpx;
         color: #666;
       }
+    }
+  }
+}
+
+.dev-section {
+  margin: 32rpx 48rpx 0;
+  padding: 24rpx;
+  background: #fff8e1;
+  border-radius: 16rpx;
+  border: 1rpx dashed #ffb74d;
+  
+  .dev-title {
+    display: block;
+    font-size: 24rpx;
+    color: #f57c00;
+    text-align: center;
+    margin-bottom: 16rpx;
+  }
+  
+  .dev-btn {
+    margin-bottom: 16rpx;
+    font-size: 28rpx;
+    border-radius: 12rpx;
+    border: none;
+    
+    &.consumer {
+      background: #667eea;
+      color: #fff;
+    }
+    
+    &.merchant {
+      background: #ff6b35;
+      color: #fff;
     }
   }
 }

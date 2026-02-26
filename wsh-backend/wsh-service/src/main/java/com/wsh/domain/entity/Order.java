@@ -43,6 +43,9 @@ public class Order {
     /** 是否沉睡唤醒订单：0否 1是 */
     private Integer isDormancyAwake;
 
+    /** 关联拼团ID（拼团订单专用） */
+    private Long groupOrderId;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 

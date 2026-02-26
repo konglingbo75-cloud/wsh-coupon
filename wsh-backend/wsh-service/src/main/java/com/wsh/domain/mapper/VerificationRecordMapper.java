@@ -52,4 +52,12 @@ public interface VerificationRecordMapper extends BaseMapper<VerificationRecord>
      */
     @Select("SELECT COUNT(*) FROM tb_verification_record WHERE merchant_id = #{merchantId} AND is_dormancy_awake = 1")
     int countDormancyAwakeByMerchantId(@Param("merchantId") Long merchantId);
+
+    /**
+     * 按活动统计核销数量（通过 voucher 关联 activity）
+     */
+    @Select("SELECT COUNT(*) FROM tb_verification_record vr " +
+            "INNER JOIN tb_voucher v ON vr.voucher_id = v.voucher_id " +
+            "WHERE v.activity_id = #{activityId}")
+    int countByActivityId(@Param("activityId") Long activityId);
 }

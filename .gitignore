@@ -30,6 +30,8 @@ Thumbs.db
 # 临时文件
 *.tmp
 *.swp
+compile_output.txt
+preview-*.png
 
 # Windows 保留文件名
 nul

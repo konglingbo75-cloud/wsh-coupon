@@ -135,10 +135,8 @@ const getStatusText = (status: string) => {
 
 const loadStats = async () => {
   try {
-    const res = await get<Stats>('/admin/orders/stats')
-    if (res.code === 0) {
-      stats.value = res.data
-    }
+    const data = await get<Stats>('/v1/merchant/orders/stats')
+    stats.value = data
   } catch (e) {
     // 忽略
   }
@@ -155,23 +153,21 @@ const loadOrders = async (reset = false) => {
   
   loading.value = true
   try {
-    const res = await get<{ list: OrderItem[] }>('/admin/orders', {
+    const data = await get<{ list: OrderItem[] }>('/v1/merchant/orders', {
       status: currentStatus.value === 'all' ? undefined : currentStatus.value,
       page: page.value,
       pageSize
     })
     
-    if (res.code === 0) {
-      const list = res.data.list || []
-      if (reset) {
-        orders.value = list
-      } else {
-        orders.value = [...orders.value, ...list]
-      }
-      
-      if (list.length < pageSize) {
-        noMore.value = true
-      }
+    const list = data.list || []
+    if (reset) {
+      orders.value = list
+    } else {
+      orders.value = [...orders.value, ...list]
+    }
+    
+    if (list.length < pageSize) {
+      noMore.value = true
     }
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' })
@@ -187,7 +183,7 @@ const verifyOrder = async (item: OrderItem) => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          const result = await post(`/admin/orders/${item.id}/verify`)
+          await post(`/v1/merchant/orders/${item.id}/verify`)
           if (result.code === 0) {
             item.status = 'verified'
             uni.showToast({ title: '核销成功', icon: 'success' })

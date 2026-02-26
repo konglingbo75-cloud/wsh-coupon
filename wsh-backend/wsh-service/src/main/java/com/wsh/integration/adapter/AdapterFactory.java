@@ -5,15 +5,14 @@ import com.wsh.domain.entity.Merchant;
 import com.wsh.domain.mapper.MerchantMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * 适配器工厂：根据商户的 integration_type 返回对应适配器
+ * 本地/开发环境下，API类型商户自动路由到 DemoAdapter
  */
 @Slf4j
 @Component
@@ -22,6 +21,9 @@ public class AdapterFactory {
 
     private final MerchantMapper merchantMapper;
     private final List<MerchantDataAdapter> adapters;
+
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
 
     /**
      * 根据商户ID获取对应的数据适配器
@@ -39,13 +41,23 @@ public class AdapterFactory {
         Integer integrationType = merchant.getIntegrationType();
         String type;
         if (integrationType != null && integrationType == 1) {
-            type = Constants.SYNC_SOURCE_API;
+            // 本地/开发环境使用 DemoAdapter 替代真实 ApiAdapter
+            if (isLocalProfile()) {
+                type = Constants.SYNC_SOURCE_DEMO;
+            } else {
+                type = Constants.SYNC_SOURCE_API;
+            }
         } else {
             // 默认使用手动适配器（integrationType=3 或 null）
             type = Constants.SYNC_SOURCE_MANUAL;
         }
 
         return getAdapterByType(type);
+    }
+
+    private boolean isLocalProfile() {
+        return activeProfile != null
+                && (activeProfile.contains("local") || activeProfile.contains("dev"));
     }
 
     private MerchantDataAdapter getAdapterByType(String type) {

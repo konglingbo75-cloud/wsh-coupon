@@ -82,6 +82,30 @@
         {
           "path": "message/list",
           "style": { "navigationBarTitleText": "消息中心" }
+        },
+        {
+          "path": "invoice/list",
+          "style": { "navigationBarTitleText": "我的发票" }
+        },
+        {
+          "path": "invoice/settings",
+          "style": { "navigationBarTitleText": "发票抬头管理" }
+        },
+        {
+          "path": "ai/chat",
+          "style": { 
+            "navigationBarTitleText": "AI助手",
+            "navigationStyle": "custom",
+            "navigationBarTextStyle": "white"
+          }
+        },
+        {
+          "path": "groupbuy/detail",
+          "style": { "navigationBarTitleText": "拼团详情" }
+        },
+        {
+          "path": "groupbuy/list",
+          "style": { "navigationBarTitleText": "我的拼团" }
         }
       ]
     },
@@ -114,16 +138,16 @@
           "style": { "navigationBarTitleText": "活动管理" }
         },
         {
+          "path": "activity/edit",
+          "style": { "navigationBarTitleText": "活动编辑" }
+        },
+        {
           "path": "member/stats",
           "style": { "navigationBarTitleText": "会员统计" }
         },
         {
-          "path": "billing/onboarding",
-          "style": { "navigationBarTitleText": "入驻费管理" }
-        },
-        {
-          "path": "billing/service-fee",
-          "style": { "navigationBarTitleText": "服务费账单" }
+          "path": "billing/index",
+          "style": { "navigationBarTitleText": "付费管理" }
         },
         {
           "path": "order/list",

@@ -192,6 +192,8 @@
 | **同城活动广场** | 未授权手机号或非会员用户，按活动类型（代金券/储值/积分兑换/团购）分类Tab展示同城所有入驻商户的公开活动；基于GPS定位自动识别城市 | 吸引新用户参与，降低使用门槛，无需注册即可发现优惠 |
 | **活动参与** | 代金券购买、储值充值、积分兑换、团购 | 一站式参与各类优惠 |
 | **我的券包** | 已购买的券码管理、使用状态、二维码展示 | 方便使用，不怕找不到 |
+| **发票管理** | 查看各商户消费的发票状态（未开/已开/开票中）、下载电子发票、申请开票 | 消费凭证一站管理 |
+| **AI智能助手** | 基于大语言模型的智能客服，支持权益咨询、活动推荐、订单查询等自然语言交互 | 更便捷的消费体验 |
 
 ### 5.2 商家端功能
 
@@ -219,6 +221,7 @@
 | **活动管理** | 活动列表、类型/状态展示、库存/销量监控 | 监控平台全部活动运营情况 |
 | **费用管理** | 入驻费记录列表（商户/套餐/金额/支付状态/有效期） | 追踪平台入驻费收入 |
 | **操作日志** | 管理员操作审计日志（模块/动作/目标/IP/时间） | 运营行为可追溯 |
+| **AI模型管理** | AI服务商配置（OpenAI/Claude/通义千问等）、模型选择、API Key管理、调用计费统计、费率设置 | 智能化服务可控可计费 |
 
 **技术架构**：
 - 前端：Vue 3 + TypeScript + Vite（端口 3001）+ Element Plus UI + Pinia 状态管理
@@ -752,7 +755,117 @@ CREATE TABLE tb_admin_operation_log (
 );
 ```
 
-### 6.11 多租户隔离方案
+### 6.11 AI服务与发票域
+
+```sql
+-- AI模型配置表
+CREATE TABLE tb_ai_model_config (
+    config_id        BIGINT PRIMARY KEY,
+    provider_code    VARCHAR(32) NOT NULL COMMENT '服务商编码：openai/claude/qwen/deepseek',
+    provider_name    VARCHAR(64) NOT NULL COMMENT '服务商名称',
+    model_name       VARCHAR(64) NOT NULL COMMENT '模型名称：gpt-4/claude-3/qwen-turbo',
+    api_endpoint     VARCHAR(255) COMMENT 'API端点URL',
+    api_key          VARCHAR(512) COMMENT '加密存储的API Key',
+    is_default       TINYINT DEFAULT 0 COMMENT '是否默认模型 0否 1是',
+    status           TINYINT DEFAULT 1 COMMENT '0停用 1启用',
+    input_price      DECIMAL(10,6) COMMENT '输入价格（元/千token）',
+    output_price     DECIMAL(10,6) COMMENT '输出价格（元/千token）',
+    max_tokens       INT DEFAULT 4096 COMMENT '最大token数',
+    temperature      DECIMAL(3,2) DEFAULT 0.7 COMMENT '温度参数',
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_provider(provider_code),
+    INDEX idx_default(is_default, status)
+);
+
+-- AI对话会话表
+CREATE TABLE tb_ai_conversation (
+    conversation_id  BIGINT PRIMARY KEY,
+    user_id          BIGINT NOT NULL COMMENT '用户ID',
+    title            VARCHAR(128) COMMENT '会话标题（自动从首条消息提取）',
+    model_config_id  BIGINT COMMENT '使用的模型配置',
+    message_count    INT DEFAULT 0 COMMENT '消息数量',
+    total_tokens     INT DEFAULT 0 COMMENT '累计token数',
+    total_cost       DECIMAL(10,4) DEFAULT 0 COMMENT '累计费用（元）',
+    status           TINYINT DEFAULT 1 COMMENT '0已删除 1正常',
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user(user_id),
+    INDEX idx_created(created_at)
+);
+
+-- AI对话消息表
+CREATE TABLE tb_ai_message (
+    message_id       BIGINT PRIMARY KEY,
+    conversation_id  BIGINT NOT NULL,
+    user_id          BIGINT NOT NULL,
+    role             VARCHAR(16) NOT NULL COMMENT 'user/assistant/system',
+    content          TEXT NOT NULL COMMENT '消息内容',
+    input_tokens     INT DEFAULT 0 COMMENT '输入token数',
+    output_tokens    INT DEFAULT 0 COMMENT '输出token数',
+    cost             DECIMAL(10,6) DEFAULT 0 COMMENT '本条消息费用',
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_conversation(conversation_id),
+    INDEX idx_user(user_id)
+);
+
+-- AI调用日账单表（按日汇总）
+CREATE TABLE tb_ai_usage_daily (
+    daily_id         BIGINT PRIMARY KEY,
+    stat_date        DATE NOT NULL COMMENT '统计日期',
+    model_config_id  BIGINT COMMENT '模型配置ID',
+    call_count       INT DEFAULT 0 COMMENT '调用次数',
+    total_input_tokens  INT DEFAULT 0 COMMENT '总输入token',
+    total_output_tokens INT DEFAULT 0 COMMENT '总输出token',
+    total_cost       DECIMAL(12,4) DEFAULT 0 COMMENT '总费用',
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX idx_date_model(stat_date, model_config_id)
+);
+
+-- 发票信息表（从商户系统同步）
+CREATE TABLE tb_invoice (
+    invoice_id       BIGINT PRIMARY KEY,
+    user_id          BIGINT NOT NULL,
+    merchant_id      BIGINT NOT NULL,
+    consume_record_id BIGINT COMMENT '关联消费记录ID',
+    invoice_no       VARCHAR(64) COMMENT '发票号码',
+    invoice_code     VARCHAR(32) COMMENT '发票代码',
+    invoice_type     TINYINT DEFAULT 1 COMMENT '1电子普票 2电子专票 3纸质普票',
+    invoice_status   TINYINT DEFAULT 0 COMMENT '0未开 1已开 2开票中 3开票失败',
+    invoice_amount   DECIMAL(10,2) COMMENT '发票金额',
+    invoice_title    VARCHAR(128) COMMENT '发票抬头',
+    tax_number       VARCHAR(32) COMMENT '税号',
+    invoice_url      VARCHAR(512) COMMENT '电子发票下载链接',
+    invoice_date     DATE COMMENT '开票日期',
+    request_time     DATETIME COMMENT '申请开票时间',
+    complete_time    DATETIME COMMENT '开票完成时间',
+    sync_time        DATETIME COMMENT '最近同步时间',
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user(user_id),
+    INDEX idx_merchant(merchant_id),
+    INDEX idx_status(invoice_status)
+);
+
+-- 用户发票抬头设置表
+CREATE TABLE tb_user_invoice_setting (
+    setting_id       BIGINT PRIMARY KEY,
+    user_id          BIGINT NOT NULL,
+    title_type       TINYINT DEFAULT 1 COMMENT '1个人 2企业',
+    invoice_title    VARCHAR(128) NOT NULL COMMENT '发票抬头',
+    tax_number       VARCHAR(32) COMMENT '税号（企业必填）',
+    bank_name        VARCHAR(64) COMMENT '开户银行',
+    bank_account     VARCHAR(32) COMMENT '银行账号',
+    company_address  VARCHAR(255) COMMENT '公司地址',
+    company_phone    VARCHAR(16) COMMENT '公司电话',
+    is_default       TINYINT DEFAULT 0 COMMENT '是否默认 0否 1是',
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user(user_id),
+    INDEX idx_default(user_id, is_default)
+);
+```
+
+### 6.12 多租户隔离方案
 
 采用**租户ID字段隔离**：所有业务表通过 `merchant_id` 区分数据，MyBatis 拦截器自动注入过滤条件。
 
@@ -1210,6 +1323,71 @@ wsh-rpa/
 
 **说明**：此流程面向所有用户（包括未登录用户），目的是通过展示同城商户的公开活动吸引新用户参与。活动的公开可见性由商户通过 `is_public` 字段控制。
 
+### 10.9 AI智能助手交互流程
+
+```
+用户点击首页/我的页面的"AI助手"入口
+    → 进入AI对话页面
+    → 首次使用时显示功能引导：
+        "我可以帮您：
+         - 查询权益余额和过期时间
+         - 推荐附近优惠活动
+         - 查询订单状态
+         - 解答平台使用问题"
+    
+用户输入问题（如"我有多少积分快过期了？"）
+    → 前端发送 POST /v1/ai/conversations/{id}/messages
+    → 后端处理：
+        1. 意图识别（权益查询/活动推荐/订单查询/通用问答）
+        2. 如需查询用户数据，调用内部接口获取
+        3. 构建带上下文的Prompt：
+           - 系统角色：微生活券吧智能助手
+           - 用户画像：会员数量、权益总值、消费偏好
+           - 当前问题 + 历史对话
+        4. 调用配置的AI模型（通义千问/DeepSeek/OpenAI等）
+        5. 流式返回回答
+        6. 记录token消耗和费用
+    → 前端实时展示AI回答（打字机效果）
+    
+AI回答示例：
+    "根据查询，您有以下积分即将过期：
+     🔴 星巴克：500积分（价值50元），3天后过期
+     🟡 海底捞：1200积分（价值60元），7天后过期
+     建议您尽快使用，点击下方链接查看可兑换商品 →"
+```
+
+**核心设计原则**：
+- AI回答需结合用户实际数据，不能凭空编造
+- 涉及金额、过期时间等敏感信息需从数据库实时查询
+- 支持快捷操作引导（跳转到具体页面）
+- Token消耗和费用由平台统一承担，在AI管理后台可监控
+
+### 10.10 发票管理流程
+
+```
+消费者进入"我的发票"页面
+    → 调用 GET /v1/invoices 获取发票列表
+    → 按状态分类展示：
+        ├── 待开票（可申请开票）
+        ├── 开票中（等待商户处理）
+        ├── 已开票（可下载/查看）
+        └── 开票失败（可重新申请）
+
+申请开票流程：
+    → 用户选择待开票的消费记录
+    → 选择/新增发票抬头（个人/企业）
+    → 提交开票申请 POST /v1/invoices/request
+    → 后端记录申请，等待商户系统处理
+    → 商户系统开票完成后同步发票信息
+    → 用户收到开票完成通知
+
+查看/下载电子发票：
+    → 点击已开票记录
+    → 显示发票详情（发票号、金额、开票日期）
+    → 提供下载链接（PDF/OFD格式）
+    → 支持发送到邮箱
+```
+
 ## 12. API 设计规范
 
 - 风格：RESTful
@@ -1274,6 +1452,29 @@ wsh-rpa/
 | GET | /v1/admin/activities?page=&size= | 活动列表（含类型/状态/库存） |
 | GET | /v1/admin/billing?page=&size= | 入驻费记录列表 |
 | GET | /v1/admin/logs?page=&size= | 操作日志列表 |
+| **发票管理（消费者端）** | | |
+| GET | /v1/invoices | 我的发票列表（分页、状态筛选） |
+| GET | /v1/invoices/{id} | 发票详情 |
+| POST | /v1/invoices/request | 申请开票 |
+| GET | /v1/invoice-settings | 获取发票抬头设置列表 |
+| POST | /v1/invoice-settings | 新增发票抬头 |
+| PUT | /v1/invoice-settings/{id} | 更新发票抬头 |
+| DELETE | /v1/invoice-settings/{id} | 删除发票抬头 |
+| PUT | /v1/invoice-settings/{id}/default | 设为默认抬头 |
+| **AI智能助手（消费者端）** | | |
+| POST | /v1/ai/conversations | 创建新对话 |
+| GET | /v1/ai/conversations | 对话历史列表 |
+| GET | /v1/ai/conversations/{id} | 获取对话详情（含消息） |
+| DELETE | /v1/ai/conversations/{id} | 删除对话 |
+| POST | /v1/ai/conversations/{id}/messages | 发送消息（流式返回） |
+| **AI模型管理（平台后台）** | | |
+| GET | /v1/admin/ai/models | AI模型配置列表 |
+| POST | /v1/admin/ai/models | 新增AI模型配置 |
+| PUT | /v1/admin/ai/models/{id} | 更新AI模型配置 |
+| DELETE | /v1/admin/ai/models/{id} | 删除AI模型配置 |
+| PUT | /v1/admin/ai/models/{id}/default | 设为默认模型 |
+| GET | /v1/admin/ai/usage/daily | AI调用日统计 |
+| GET | /v1/admin/ai/usage/summary | AI调用汇总统计 |
 
 ## 13. 集成适配层设计
 

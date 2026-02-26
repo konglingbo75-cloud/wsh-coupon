@@ -74,13 +74,9 @@
           <view class="icon-wrap order">📋</view>
           <text class="label">订单管理</text>
         </view>
-        <view class="entry-item" @click="goBillingOnboarding">
+        <view class="entry-item" @click="goBilling">
           <view class="icon-wrap billing">💰</view>
-          <text class="label">入驻费</text>
-        </view>
-        <view class="entry-item" @click="goBillingService">
-          <view class="icon-wrap service">📊</view>
-          <text class="label">服务费</text>
+          <text class="label">付费管理</text>
         </view>
         <view class="entry-item" @click="goEmployeeBind">
           <view class="icon-wrap employee">👤</view>
@@ -211,21 +207,19 @@ const getTodoIcon = (type: string) => {
 
 const loadDashboard = async () => {
   try {
-    const res = await get<{
+    const data = await get<{
       merchant: MerchantInfo
       stats: Stats
       todos: TodoItem[]
       recentOrders: OrderItem[]
-    }>('/admin/dashboard', { dateRange: dateRange.value })
+    }>('/v1/merchant/dashboard', { dateRange: dateRange.value })
     
-    if (res.code === 0) {
-      merchantInfo.value = res.data.merchant
-      stats.value = res.data.stats
-      todoList.value = res.data.todos || []
-      recentOrders.value = res.data.recentOrders || []
-    }
+    merchantInfo.value = data.merchant
+    stats.value = data.stats
+    todoList.value = data.todos || []
+    recentOrders.value = data.recentOrders || []
   } catch (e) {
-    uni.showToast({ title: '加载失败', icon: 'none' })
+    console.error('加载仪表盘失败', e)
   }
 }
 
@@ -251,12 +245,8 @@ const goOrders = () => {
   uni.navigateTo({ url: '/pages/admin/order/list' })
 }
 
-const goBillingOnboarding = () => {
-  uni.navigateTo({ url: '/pages/admin/billing/onboarding' })
-}
-
-const goBillingService = () => {
-  uni.navigateTo({ url: '/pages/admin/billing/service-fee' })
+const goBilling = () => {
+  uni.navigateTo({ url: '/pages/admin/billing/index' })
 }
 
 const goEmployeeBind = () => {

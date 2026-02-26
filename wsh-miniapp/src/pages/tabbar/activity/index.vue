@@ -1,9 +1,15 @@
 <template>
   <view class="activity-page">
+    <!-- 城市选择器 -->
+    <CitySelector 
+      v-model:visible="showCitySelector" 
+      @select="onCitySelected"
+    />
+    
     <!-- 顶部搜索栏 -->
     <view class="search-bar">
-      <view class="city-btn" @tap="selectCity">
-        <text>{{ appStore.currentCity }}</text>
+      <view class="city-btn" @tap="openCitySelector">
+        <text>{{ appStore.currentCityName }}</text>
         <text class="arrow">▼</text>
       </view>
       <view class="search-input" @tap="goSearch">
@@ -102,16 +108,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '@/store/app'
 import { getPublicActivities, type PublicActivity, type PublicActivitiesResponse } from '@/api/public'
+import CitySelector from '@/components/CitySelector.vue'
+import type { CityItem } from '@/api/city'
 
 const appStore = useAppStore()
 
 const currentType = ref<'all' | 'voucher' | 'deposit' | 'points' | 'group'>('all')
 const loading = ref(false)
 const refreshing = ref(false)
+const showCitySelector = ref(false)
 
 const activitiesData = ref<PublicActivitiesResponse | null>(null)
 
@@ -154,7 +163,7 @@ onShow(() => {
 async function loadActivities() {
   loading.value = true
   try {
-    activitiesData.value = await getPublicActivities(appStore.currentCity)
+    activitiesData.value = await getPublicActivities(appStore.currentCityName)
   } catch (err) {
     console.error('加载活动失败', err)
   } finally {
@@ -172,8 +181,13 @@ function switchType(type: typeof currentType.value) {
   currentType.value = type
 }
 
-function selectCity() {
-  uni.showToast({ title: '城市选择功能开发中', icon: 'none' })
+function openCitySelector() {
+  showCitySelector.value = true
+}
+
+function onCitySelected(city: CityItem) {
+  // 城市切换后重新加载数据
+  loadActivities()
 }
 
 function goSearch() {

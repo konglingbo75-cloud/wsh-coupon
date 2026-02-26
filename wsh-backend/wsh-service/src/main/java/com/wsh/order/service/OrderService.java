@@ -353,33 +353,25 @@ public class OrderService {
         }
         
         String stockKey = STOCK_KEY_PREFIX + activityId;
-        Object cached = redisUtil.get(stockKey);
-        int currentStock;
         
-        if (cached == null) {
-            // 初始化库存到缓存
+        // 确保缓存中有库存值
+        if (redisUtil.get(stockKey) == null) {
             Activity activity = activityMapper.selectById(activityId);
             int sold = activity.getSoldCount() != null ? activity.getSoldCount() : 0;
-            currentStock = totalStock - sold;
+            int currentStock = totalStock - sold;
             redisUtil.set(stockKey, currentStock, 3600L, java.util.concurrent.TimeUnit.SECONDS);
-        } else {
-            currentStock = (Integer) cached;
         }
         
-        if (currentStock < quantity) {
-            return false;
-        }
-        
-        // 原子扣减（模拟，实际生产环境使用Redis DECR）
-        redisUtil.set(stockKey, currentStock - quantity, 3600L, java.util.concurrent.TimeUnit.SECONDS);
-        return true;
+        // 原子扣减（Lua 脚本，防超卖）
+        Long remaining = redisUtil.stockDecrement(stockKey, quantity);
+        return remaining != null && remaining >= 0;
     }
 
     private void rollbackStock(Long activityId, int quantity) {
         String stockKey = STOCK_KEY_PREFIX + activityId;
         Object cached = redisUtil.get(stockKey);
         if (cached != null) {
-            int currentStock = (Integer) cached;
+            long currentStock = ((Number) cached).longValue();
             redisUtil.set(stockKey, currentStock + quantity, 3600L, java.util.concurrent.TimeUnit.SECONDS);
         }
     }

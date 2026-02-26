@@ -2,12 +2,20 @@
  * API 请求封装
  */
 
-// API 基础地址（H5 开发时走 Vite 代理 /api → localhost:8080）
+// API 基础地址
 // #ifdef H5
 const BASE_URL = '/api'
 // #endif
 // #ifndef H5
-const BASE_URL = 'http://43.134.236.67:9000'
+// 根据构建模式自动切换：
+// - 开发环境 (npm run dev): 使用本地后端
+// - 生产环境 (npm run build): 使用生产服务器
+let BASE_URL: string
+if (process.env.NODE_ENV === 'production') {
+  BASE_URL = 'https://your-domain.com'  // 部署前替换为实际域名
+} else {
+  BASE_URL = 'http://localhost:8080'
+}
 // #endif
 
 // 请求超时时间

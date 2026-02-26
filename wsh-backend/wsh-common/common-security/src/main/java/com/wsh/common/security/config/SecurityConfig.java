@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wsh.common.core.result.R;
 import com.wsh.common.security.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -32,6 +33,9 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectMapper objectMapper;
 
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -39,6 +43,9 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        boolean isLocal = activeProfile != null
+                && (activeProfile.contains("local") || activeProfile.contains("dev"));
+
         http
             // 关闭 CSRF（小程序无 Cookie）
             .csrf(AbstractHttpConfigurer::disable)
@@ -46,22 +53,33 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 路径权限配置
-            .authorizeHttpRequests(auth -> auth
-                // 白名单：认证、公共接口、Swagger、健康检查、静态资源
-                .requestMatchers("/v1/auth/**").permitAll()
-                .requestMatchers("/v1/admin/auth/**").permitAll()
-                .requestMatchers("/v1/public/**").permitAll()
-                .requestMatchers("/v1/callback/**").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/static/**", "/*.html", "/*.css", "/*.js", "/*.ico").permitAll()
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .authorizeHttpRequests(auth -> {
+                // 白名单：认证、公共接口、健康检查、静态资源
+                auth.requestMatchers("/v1/auth/**").permitAll()
+                    .requestMatchers("/v1/admin/auth/**").permitAll()
+                    .requestMatchers("/v1/public/**").permitAll()
+                    .requestMatchers("/v1/callback/**").permitAll()
+                    .requestMatchers("/actuator/health").permitAll()
+                    .requestMatchers("/static/**", "/*.html", "/*.css", "/*.js", "/*.ico").permitAll()
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+
+                // 仅本地/开发环境开放 H2 控制台和 Swagger
+                if (isLocal) {
+                    auth.requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll();
+                }
+
                 // 其余接口需要认证
-                .anyRequest().authenticated()
-            )
-            // H2 Console需要允许iframe
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                auth.anyRequest().authenticated();
+            })
+            // 仅本地环境允许 H2 Console 的 iframe
+            .headers(headers -> {
+                if (isLocal) {
+                    headers.frameOptions(frame -> frame.sameOrigin());
+                } else {
+                    headers.frameOptions(frame -> frame.deny());
+                }
+            })
             // 未认证处理
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {

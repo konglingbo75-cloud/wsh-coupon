@@ -34,6 +34,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '商户详情', hidden: true }
       },
       {
+        path: 'cities',
+        name: 'Cities',
+        component: () => import('@/views/Cities.vue'),
+        meta: { title: '城市管理', icon: 'Location' }
+      },
+      {
         path: 'users',
         name: 'Users',
         component: () => import('@/views/Users.vue'),
@@ -46,10 +52,22 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '活动管理', icon: 'Present' }
       },
       {
+        path: 'group-orders',
+        name: 'GroupOrders',
+        component: () => import('@/views/GroupOrders.vue'),
+        meta: { title: '拼团管理', icon: 'Connection' }
+      },
+      {
         path: 'billing',
         name: 'Billing',
         component: () => import('@/views/Billing.vue'),
         meta: { title: '费用管理', icon: 'Money' }
+      },
+      {
+        path: 'ai',
+        name: 'AiManagement',
+        component: () => import('@/views/AiManagement.vue'),
+        meta: { title: 'AI管理', icon: 'ChatDotRound' }
       },
       {
         path: 'logs',

@@ -144,17 +144,15 @@ const maskPhone = (phone?: string) => {
 
 const loadSettings = async () => {
   try {
-    const res = await get<{
+    const data = await get<{
       merchant: MerchantInfo
       employeeCount: number
       notifySettings: NotifySettings
-    }>('/admin/settings')
+    }>('/v1/merchant/settings')
     
-    if (res.code === 0) {
-      merchantInfo.value = res.data.merchant
-      employeeCount.value = res.data.employeeCount
-      notifySettings.value = res.data.notifySettings
-    }
+    merchantInfo.value = data.merchant
+    employeeCount.value = data.employeeCount
+    notifySettings.value = data.notifySettings
   } catch (e) {
     // 忽略
   }
@@ -165,7 +163,7 @@ const toggleNotify = async (key: keyof NotifySettings, e: any) => {
   notifySettings.value[key] = value
   
   try {
-    await post('/admin/settings/notify', { [key]: value })
+    await post('/v1/merchant/settings/notify', { [key]: value })
   } catch (e) {
     // 回滚
     notifySettings.value[key] = !value

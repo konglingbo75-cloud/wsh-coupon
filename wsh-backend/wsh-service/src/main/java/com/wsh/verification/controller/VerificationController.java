@@ -64,7 +64,7 @@ public class VerificationController {
     }
 
     @Operation(summary = "服务费账单", description = "查询商户服务费扣除明细")
-    @GetMapping("/merchant/billing/service-fees")
+    @GetMapping("/merchant/billing/service-fees/detail")
     public R<ServiceFeeBillResponse> getServiceFeeBill(
             @Parameter(description = "年份（可选）") @RequestParam(required = false) Integer year,
             @Parameter(description = "月份（可选）") @RequestParam(required = false) Integer month,
